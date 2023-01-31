@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./Broker.sol";
+import {console} from "forge-std/console.sol";
 
 contract Pool {
     struct BrokerInfo {
@@ -12,6 +13,14 @@ contract Pool {
     mapping(address => BrokerInfo) public loans;
 
     event NewBrokerDeployed(address brokerInfo, address lender, address storageProvider);
+
+    function deposit(uint256 amount) external {
+      require(msg.sender.balance > amount, "Not enough");
+
+      console.log(msg.sender);
+
+      payable(address(msg.sender)).transfer(amount);
+    }
 
     function getBrokerInfo(address _brokerInfo) external view returns (BrokerInfo memory) {
         return loans[_brokerInfo];

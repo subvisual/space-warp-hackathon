@@ -1,8 +1,13 @@
 [profile.default]
-src = 'src'
-out = 'out'
-libs = ['lib']
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.13"
 
-solc = '0.8.13'
+remappings = [
+  "@forge-std/=lib/forge-std/src/"
+]
+
+rpc_endpoints = { hyperspace = "${RPC_URL}" }
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
