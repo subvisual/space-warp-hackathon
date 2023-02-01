@@ -9,8 +9,6 @@ import {console} from "forge-std/console.sol";
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract ERC20Deposit {}
-
 contract Pool {
     CosmicFil cosmicFil;
 
@@ -69,7 +67,6 @@ contract Pool {
 
         emit NewBrokerDeployed(newBrokerAddress, spAddress, amount);
     }
-
 
     // function deployBroker(address _storageProvider) external returns (address) {
     //     Broker b = new Broker(_storageProvider);
