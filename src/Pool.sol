@@ -18,55 +18,71 @@ contract Pool {
     mapping(address => uint256) public lenderBalance;
     mapping(address => uint256) public storageProviderBalance;
 
+    uint256 public workingCapital;
+
     // Events
     event StorageProviderDeposit(address from, uint256 value);
     event LenderDeposit(address from, uint256 value);
-    event NewBrokerDeployed(address brokerInfo, address storageProvider, uint256 amount);
+    event NewBrokerDeployed(address broker, address pool, address storageProvider, uint256 amount);
 
-    constructor() {
-        cosmicFil = new CosmicFil("CosmicFil", "CFA");
+    constructor(address _cosmicFil) {
+        cosmicFil = CosmicFil(_cosmicFil);
     }
 
-    function depositLender(address tokenAddress) public payable {
+    function depositLender() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        CosmicFil token = CosmicFil(tokenAddress);
+        require(cosmicFil.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
 
-        require(token.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
-
-        token.transferFrom(msg.sender, address(this), msg.value);
+        cosmicFil.transferFrom(msg.sender, address(this), msg.value);
 
         lenderBalance[msg.sender] += msg.value;
+
+        workingCapital += msg.value;
 
         emit LenderDeposit(msg.sender, msg.value);
     }
 
-    function depositStorageProvider(address tokenAddress) public payable {
+    function depositStorageProvider() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        CosmicFil token = CosmicFil(tokenAddress);
+        require(cosmicFil.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
 
-        require(token.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
-
-        token.transferFrom(msg.sender, address(this), msg.value);
+        cosmicFil.transferFrom(msg.sender, address(this), msg.value);
 
         storageProviderBalance[msg.sender] += msg.value;
 
         emit StorageProviderDeposit(msg.sender, msg.value);
     }
 
-    function requestLoan(address ownerSP, address minerSP, uint256 amount) external {
-        StorageProviderMock mock = new StorageProviderMock(ownerSP, minerSP);
-        address spAddress = address(mock);
-        storageProviders[msg.sender] = mock;
+    function requestLoan(address storageProvider, uint256 amount) external returns (address) {
+        require(storageProviderBalance[msg.sender] >= amount, "Not enough collateral in the pool");
+        require(workingCapital >= amount, "Not enough working collateral in the pool");
 
-        Broker b = new Broker(address(this), spAddress, amount);
-        address newBrokerAddress = address(b);
+        Broker broker = new Broker(address(this), storageProvider, amount);
 
-        loans[msg.sender] = b;
+        cosmicFil.transfer(address(broker), amount * 2);
 
-        emit NewBrokerDeployed(newBrokerAddress, spAddress, amount);
+        storageProviderBalance[msg.sender] = 0;
+        workingCapital -= amount;
+
+        emit NewBrokerDeployed(address(broker), address(this), storageProvider, amount);
+
+        return address(broker);
     }
+
+    // function requestLoan(address ownerSP, address minerSP, uint256 amount) external {
+    //     StorageProviderMock mock = new StorageProviderMock(ownerSP, minerSP);
+    //     address spAddress = address(mock);
+    //     storageProviders[msg.sender] = mock;
+    //
+    //     Broker b = new Broker(address(this), spAddress, amount);
+    //     address newBrokerAddress = address(b);
+    //
+    //     loans[msg.sender] = b;
+    //
+    //     emit NewBrokerDeployed(newBrokerAddress, spAddress, amount);
+    // }
 
     // function deployBroker(address _storageProvider) external returns (address) {
     //     Broker b = new Broker(_storageProvider);

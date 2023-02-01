@@ -21,12 +21,12 @@ contract PoolTest is Test {
 
     event StorageProviderDeposit(address from, uint256 value);
     event LenderDeposit(address from, uint256 value);
-    event NewBrokerDeployed(address brokerInfo, address lender, address storageProvider);
+    event NewBrokerDeployed(address broker, address pool, address storageProvider, uint256 amount);
 
     function setUp() public {
         utils = new Utils();
-        pool = new Pool();
         cosmicFil = new CosmicFil("CosmicFil", "CFA");
+        pool = new Pool(address(cosmicFil));
 
         users = utils.createUsers(2);
 
@@ -49,7 +49,7 @@ contract PoolTest is Test {
         vm.expectEmit(false, false, false, true);
         emit LenderDeposit(address(lender), 1e18);
 
-        pool.depositLender{value: 1e18}(address(cosmicFil));
+        pool.depositLender{value: 1e18}();
 
         assertEq(cosmicFil.balanceOf(lender), 9e18);
 
@@ -65,10 +65,38 @@ contract PoolTest is Test {
         vm.expectEmit(false, false, false, true);
         emit StorageProviderDeposit(address(storageProvider), 1e18);
 
-        pool.depositStorageProvider{value: 1e18}(address(cosmicFil));
+        pool.depositStorageProvider{value: 1e18}();
 
         assertEq(cosmicFil.balanceOf(storageProvider), 9e18);
 
         vm.stopPrank();
+    }
+
+    function testRequestLoanNotEnoughCollateral() public {
+        vm.startPrank(storageProvider);
+
+        vm.expectRevert("Not enough collateral in the pool");
+        pool.requestLoan(address(this), 10e18);
+
+        vm.stopPrank();
+    }
+
+    function testRequestLoanDeploysBroker() public {
+        vm.startPrank(lender);
+        cosmicFil.approve(address(pool), 10e18);
+        pool.depositLender{value: 5e18}();
+
+        vm.stopPrank();
+        vm.startPrank(storageProvider);
+
+        cosmicFil.approve(address(pool), 10e18);
+
+        pool.depositStorageProvider{value: 5e18}();
+
+        address broker = pool.requestLoan(address(this), 2e18);
+
+        vm.stopPrank();
+
+        assertEq(cosmicFil.balanceOf(broker), 4e18);
     }
 }

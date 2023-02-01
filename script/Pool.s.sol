@@ -11,7 +11,8 @@ contract PoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        Pool _pool = new Pool();
+        CosmicFil _cosmicFil = new CosmicFil("CosmicFil", "CFA");
+        new Pool(address(_cosmicFil));
 
         vm.stopBroadcast();
     }
