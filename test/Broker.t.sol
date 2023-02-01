@@ -8,11 +8,11 @@ contract BrokerTest is Test {
     Broker public broker;
 
     function setUp() public {
-        broker = new Broker(address(0x1), address(0x2));
+        broker = new Broker(address(0x1), address(0x2), 1e18);
     }
 
-    function testGetLender() public {
-        assertEq(broker.getLender(), address(0x1));
+    function testGetPool() public {
+        assertEq(broker.getPool(), address(0x1));
     }
 
     function testGetStorageProvider() public {

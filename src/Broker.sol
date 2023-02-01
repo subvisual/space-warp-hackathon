@@ -2,16 +2,18 @@
 pragma solidity ^0.8.13;
 
 contract Broker {
-    address public lender;
+    address public pool;
     address public storage_provider;
+    uint256 public loanAmount;
 
-    constructor(address _lender, address _storage_provider) {
-        lender = _lender;
+    constructor(address _pool, address _storage_provider, uint256 _loanAmount) {
+        pool = _pool;
         storage_provider = _storage_provider;
+        loanAmount = _loanAmount;
     }
 
-    function getLender() public view returns (address) {
-        return lender;
+    function getPool() public view returns (address) {
+        return pool;
     }
 
     function getStorageProvider() public view returns (address) {

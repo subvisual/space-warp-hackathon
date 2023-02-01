@@ -16,9 +16,10 @@ contract PoolTest is Test {
 
   address payable[] internal users;
 
-  address payable internal alice;
-  address internal bob;
+  address payable internal storageProvider;
+  address payable internal lender;
 
+  event StorageProviderDeposit(address from, uint256 value);
   event NewBrokerDeployed(address brokerInfo, address lender, address storageProvider);
 
   function setUp() public {
@@ -28,45 +29,28 @@ contract PoolTest is Test {
 
     users = utils.createUsers(2);
 
-    alice = users[0];
-    vm.label(alice, "Alice");
+    storageProvider = users[0];
+    vm.label(storageProvider, "Storage Provider");
 
-    bob = users[1];
-    vm.label(bob, "Bob");
+    lender = users[1];
+    vm.label(lender, "Bob");
 
-    cosmicFil.mint(alice, 10e18);
+    cosmicFil.mint(storageProvider, 10e18);
   }
 
-  function testDeployBroker() public {
-    address newBroker = pool.deployBroker(address(1), address(2));
+  function testStorageProviderDeposits() public {
+    vm.prank(storageProvider);
+    assertEq(cosmicFil.balanceOf(storageProvider), 10e18);
 
-    Pool.BrokerInfo memory broker = pool.getBrokerInfo(newBroker);
+    vm.prank(storageProvider);
+    cosmicFil.approve(address(pool), 10e18);
 
-    assertEq(broker.lender, address(1));
-    assertEq(broker.storageProvider, address(2));
-  }
-
-  function testExpectNewBrokerDeployedEvent() public {
     vm.expectEmit(false, false, false, true);
-    address newBroker = pool.deployBroker(address(1), address(2));
+    emit StorageProviderDeposit(address(storageProvider), 1e18);
 
-    emit NewBrokerDeployed(address(newBroker), address(1), address(2));
-  }
+    vm.prank(storageProvider);
+    pool.deposit{value: 1e18}(address(cosmicFil));
 
-  function testAliceDeposits() public {
-    console.log("Starting");
-
-    vm.prank(alice);
-    assertEq(cosmicFil.balanceOf(alice), 10e18);
-
-    console.log("Approving..");
-
-    vm.prank(alice);
-    pool.approve(1e18);
-
-    // console.log("Depositing..");
-    // pool.deposit(1e18);
-
-    // assertEq(cosmicFil.balanceOf(alice), 9e18);
+    assertEq(cosmicFil.balanceOf(storageProvider), 9e18);
   }
 }
