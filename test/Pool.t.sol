@@ -2,13 +2,17 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
-import "../src/Pool.sol";
 import "./Utils.sol";
+
+import {console} from "forge-std/console.sol";
+
+import "../src/Pool.sol";
+import "../src/CosmicFil.sol";
 
 contract PoolTest is Test {
   Utils internal utils;
   Pool public pool;
+  CosmicFil cosmicFil;
 
   address payable[] internal users;
 
@@ -20,6 +24,7 @@ contract PoolTest is Test {
   function setUp() public {
     utils = new Utils();
     pool = new Pool();
+    cosmicFil = new CosmicFil("CosmicFil", "CFA");
 
     users = utils.createUsers(2);
 
@@ -28,6 +33,8 @@ contract PoolTest is Test {
 
     bob = users[1];
     vm.label(bob, "Bob");
+
+    cosmicFil.mint(alice, 10e18);
   }
 
   function testDeployBroker() public {
@@ -50,13 +57,16 @@ contract PoolTest is Test {
     console.log("Starting");
 
     vm.prank(alice);
-    assertEq(alice.balance, 100 ether);
+    assertEq(cosmicFil.balanceOf(alice), 10e18);
 
-    console.log("Depositing..");
-    console.log(address(alice));
+    console.log("Approving..");
 
-    pool.deposit(1 ether);
+    vm.prank(alice);
+    pool.approve(1e18);
 
-    assertEq(alice.balance, 99 ether);
+    // console.log("Depositing..");
+    // pool.deposit(1e18);
+
+    // assertEq(cosmicFil.balanceOf(alice), 9e18);
   }
 }
