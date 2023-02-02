@@ -91,7 +91,7 @@ contract PoolTest is Test {
 
         cosmicFil.approve(address(pool), 10e18);
 
-        pool.depositStorageProvider{value: 5e18}();
+        pool.depositStorageProvider{value: 2e18}();
 
         address broker = pool.requestLoan(address(this), 2e18);
 
