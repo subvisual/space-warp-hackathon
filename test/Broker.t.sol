@@ -28,13 +28,13 @@ contract BrokerTest is Test {
 
     function testUpdatePool() public {
         assertEq(broker.loanAmount(), 4e18);
-
-        assertEq(pool.totalWorkingCapital(), 0e18);
-        assertEq(pool.lockedCapital(address(0x2)), 0e18);
-
         assertEq(cosmicFil.balanceOf(address(broker)), 2e18);
 
+        assertEq(pool.lockedCapital(address(0x2)), 0e18);
+        assertEq(pool.totalWorkingCapital(), 0e18);
+
         broker.reward(2e18);
+
         assertEq(broker.loanAmount(), 3e18);
         assertEq(cosmicFil.balanceOf(address(broker)), 0e18);
 
