@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "./Broker.sol";
-import "./StorageProviderMock.sol";
 import "./CosmicFil.sol";
 
 import {console} from "forge-std/console.sol";
@@ -13,7 +12,6 @@ contract Pool {
     CosmicFil public cosmicFil;
 
     mapping(address => Broker) public loans;
-    mapping(address => StorageProviderMock) public storageProviders;
 
     mapping(address => uint256) public lenderBalance;
     mapping(address => uint256) public storageProviderBalance;
