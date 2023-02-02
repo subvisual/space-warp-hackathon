@@ -21,7 +21,14 @@ contract PoolTest is Test {
 
     event StorageProviderDeposit(address from, uint256 value);
     event LenderDeposit(address from, uint256 value);
-    event NewBrokerDeployed(address broker, address pool, address storageProvider, uint256 amount);
+    event NewBrokerDeployed(
+        address broker,
+        address pool,
+        address storageProvider,
+        address storageProviderOwner,
+        address storageProviderMiner,
+        uint256 amount
+    );
 
     function setUp() public {
         utils = new Utils();
@@ -76,7 +83,7 @@ contract PoolTest is Test {
         vm.startPrank(storageProvider);
 
         vm.expectRevert("Not enough collateral in the pool");
-        pool.requestLoan(address(this), 10e18);
+        pool.requestLoan(address(this), address(this), 10e18);
 
         vm.stopPrank();
     }
@@ -93,7 +100,7 @@ contract PoolTest is Test {
 
         pool.depositStorageProvider{value: 2e18}();
 
-        address broker = pool.requestLoan(address(this), 2e18);
+        address broker = pool.requestLoan(address(this), address(this), 2e18);
 
         vm.stopPrank();
 

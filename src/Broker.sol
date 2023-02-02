@@ -3,12 +3,14 @@ pragma solidity ^0.8.13;
 
 contract Broker {
     address public pool;
-    address public storage_provider;
+    address public storageProviderOwner;
+    address public storageProviderMiner;
     uint256 public loanAmount;
 
-    constructor(address _pool, address _storage_provider, uint256 _loanAmount) {
+    constructor(address _pool, address _storageProviderOwner, address _storageProviderMiner, uint256 _loanAmount) {
         pool = _pool;
-        storage_provider = _storage_provider;
+        storageProviderOwner = _storageProviderOwner;
+        storageProviderMiner = _storageProviderMiner;
         loanAmount = _loanAmount;
     }
 
@@ -16,7 +18,7 @@ contract Broker {
         return pool;
     }
 
-    function getStorageProvider() public view returns (address) {
-        return storage_provider;
+    function getStorageProvider() public view returns (address, address) {
+        return (storageProviderOwner, storageProviderMiner);
     }
 }

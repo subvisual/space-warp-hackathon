@@ -8,7 +8,7 @@ contract BrokerTest is Test {
     Broker public broker;
 
     function setUp() public {
-        broker = new Broker(address(0x1), address(0x2), 1e18);
+        broker = new Broker(address(0x1), address(0x2),address(0x3), 1e18);
     }
 
     function testGetPool() public {
@@ -16,6 +16,9 @@ contract BrokerTest is Test {
     }
 
     function testGetStorageProvider() public {
-        assertEq(broker.getStorageProvider(), address(0x2));
+        (address owner, address miner) = broker.getStorageProvider();
+
+        assertEq(owner, address(0x2));
+        assertEq(miner, address(0x3));
     }
 }
