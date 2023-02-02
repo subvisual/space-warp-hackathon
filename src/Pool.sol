@@ -19,16 +19,15 @@ contract Pool {
     mapping(address => uint256) public storageProviderBalance;
 
     uint256 public workingCapital;
+    uint256 public totalLenderBalance;
+    uint256 public totalStorageProviderBalance;
+    uint256 public totalCollateral;
 
     // Events
     event StorageProviderDeposit(address from, uint256 value);
     event LenderDeposit(address from, uint256 value);
     event NewBrokerDeployed(
-        address broker,
-        address pool,
-        address storageProviderOwner,
-        address storageProviderMiner,
-        uint256 amount
+        address broker, address pool, address storageProviderOwner, address storageProviderMiner, uint256 amount
     );
 
     constructor(address _cosmicFil) {
@@ -43,8 +42,9 @@ contract Pool {
         cosmicFil.transferFrom(msg.sender, address(this), msg.value);
 
         lenderBalance[msg.sender] += msg.value;
-
+        totalLenderBalance += msg.value;
         workingCapital += msg.value;
+        totalCollateral += msg.value;
 
         emit LenderDeposit(msg.sender, msg.value);
     }
@@ -57,8 +57,14 @@ contract Pool {
         cosmicFil.transferFrom(msg.sender, address(this), msg.value);
 
         storageProviderBalance[msg.sender] += msg.value;
+        totalStorageProviderBalance += msg.value;
+        totalCollateral += msg.value;
 
         emit StorageProviderDeposit(msg.sender, msg.value);
+    }
+
+    function balance() public view returns (uint256) {
+        return cosmicFil.balanceOf(msg.sender);
     }
 
     function requestLoan(address storageProviderOwner, address storageProviderMiner, uint256 amount)
@@ -74,10 +80,11 @@ contract Pool {
 
         storageProviderBalance[msg.sender] -= amount;
         workingCapital -= amount;
+        totalStorageProviderBalance -= amount;
+        totalLenderBalance -= amount;
+        totalCollateral -= amount * 2;
 
-        emit NewBrokerDeployed(
-            address(broker), address(this), storageProviderOwner, storageProviderMiner, amount
-            );
+        emit NewBrokerDeployed(address(broker), address(this), storageProviderOwner, storageProviderMiner, amount);
 
         return address(broker);
     }
