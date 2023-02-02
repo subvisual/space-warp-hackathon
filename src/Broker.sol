@@ -1,24 +1,30 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import "./Pool.sol";
+
 contract Broker {
-    address public pool;
+    Pool public pool;
     address public storageProviderOwner;
     address public storageProviderMiner;
     uint256 public loanAmount;
 
     constructor(address _pool, address _storageProviderOwner, address _storageProviderMiner, uint256 _loanAmount) {
-        pool = _pool;
+        pool = Pool(_pool);
         storageProviderOwner = _storageProviderOwner;
         storageProviderMiner = _storageProviderMiner;
         loanAmount = _loanAmount;
     }
 
-    function getPool() public view returns (address) {
-        return pool;
-    }
-
     function getStorageProvider() public view returns (address, address) {
         return (storageProviderOwner, storageProviderMiner);
+    }
+
+    function reward(uint256 amount) public {
+        pool.updatePool(storageProviderOwner, amount);
+
+        loanAmount -= (amount / 2);
+
+        pool.cosmicFil().transfer(address(pool), amount);
     }
 }

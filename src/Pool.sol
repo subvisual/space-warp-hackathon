@@ -10,15 +10,16 @@ import {console} from "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Pool {
-    CosmicFil cosmicFil;
+    CosmicFil public cosmicFil;
 
     mapping(address => Broker) public loans;
     mapping(address => StorageProviderMock) public storageProviders;
 
     mapping(address => uint256) public lenderBalance;
     mapping(address => uint256) public storageProviderBalance;
+    mapping(address => uint256) public lockedCapital;
 
-    uint256 public workingCapital;
+    uint256 public totalWorkingCapital;
     uint256 public totalLenderBalance;
     uint256 public totalStorageProviderBalance;
     uint256 public totalCollateral;
@@ -43,7 +44,7 @@ contract Pool {
 
         lenderBalance[msg.sender] += msg.value;
         totalLenderBalance += msg.value;
-        workingCapital += msg.value;
+        totalWorkingCapital += msg.value;
         totalCollateral += msg.value;
 
         emit LenderDeposit(msg.sender, msg.value);
@@ -72,14 +73,14 @@ contract Pool {
         returns (address)
     {
         require(storageProviderBalance[msg.sender] >= amount, "Not enough collateral in the pool");
-        require(workingCapital >= amount, "Not enough working collateral in the pool");
+        require(totalWorkingCapital >= amount, "Not enough working collateral in the pool");
 
         Broker broker = new Broker(address(this), storageProviderOwner, storageProviderMiner, amount);
 
         cosmicFil.transfer(address(broker), amount * 2);
 
         storageProviderBalance[msg.sender] -= amount;
-        workingCapital -= amount;
+        totalWorkingCapital -= amount;
         totalStorageProviderBalance -= amount;
         totalLenderBalance -= amount;
         totalCollateral -= amount * 2;
@@ -87,5 +88,10 @@ contract Pool {
         emit NewBrokerDeployed(address(broker), address(this), storageProviderOwner, storageProviderMiner, amount);
 
         return address(broker);
+    }
+
+    function updatePool(address _storageProvider, uint256 amount) public {
+        lockedCapital[_storageProvider] += amount / 2;
+        totalWorkingCapital += amount / 2;
     }
 }

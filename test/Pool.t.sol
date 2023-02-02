@@ -110,7 +110,6 @@ contract PoolTest is Test {
 
         pool.depositStorageProvider{value: 2e18}();
 
-
         assertEq(pool.totalLenderBalance(), 5e18);
         assertEq(pool.totalStorageProviderBalance(), 2e18);
         assertEq(pool.totalCollateral(), 7e18);
