@@ -21,8 +21,8 @@ contract PoolTest is Test {
     address payable internal anotherStorageProvider;
     address payable internal anotherLender;
 
-    event StorageProviderDeposit(address from, uint256 value);
-    event LenderDeposit(address from, uint256 value);
+    event StorageProviderDeposit(address indexed from, uint256 value);
+    event LenderDeposit(address indexed from, uint256 value);
     event NewBrokerDeployed(
         address broker,
         address pool,
@@ -63,7 +63,7 @@ contract PoolTest is Test {
 
         cosmicFil.approve(address(pool), 10e18);
 
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit(true, false, false, true);
         emit LenderDeposit(address(lender), 1e18);
 
         pool.depositLender{value: 1e18}();
@@ -79,7 +79,7 @@ contract PoolTest is Test {
 
         cosmicFil.approve(address(pool), 10e18);
 
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit(true, false, false, true);
         emit StorageProviderDeposit(address(storageProvider), 1e18);
 
         pool.depositStorageProvider{value: 1e18}();

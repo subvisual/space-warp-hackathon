@@ -25,11 +25,16 @@ contract Pool {
     uint256 public totalCollateral;
 
     // Events
-    event StorageProviderDeposit(address from, uint256 value);
-    event LenderDeposit(address from, uint256 value);
+    event StorageProviderDeposit(address indexed from, uint256 value);
+    event LenderDeposit(address indexed from, uint256 value);
     event NewBrokerDeployed(
-        address broker, address pool, address storageProviderOwner, address storageProviderMiner, uint256 amount
+        address indexed broker,
+        address indexed pool,
+        address storageProviderOwner,
+        address storageProviderMiner,
+        uint256 amount
     );
+    event PoolUpdated(address indexed storageProvider, uint256 amount);
 
     constructor(address _cosmicFil) {
         cosmicFil = CosmicFil(_cosmicFil);
@@ -93,5 +98,7 @@ contract Pool {
     function updatePool(address _storageProvider, uint256 amount) public {
         lockedCapital[_storageProvider] += amount / 2;
         totalWorkingCapital += amount / 2;
+
+        emit PoolUpdated(_storageProvider, amount);
     }
 }
