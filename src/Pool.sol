@@ -2,15 +2,10 @@
 pragma solidity ^0.8.13;
 
 import "./Broker.sol";
-import "./CosmicFil.sol";
 
 import {console} from "forge-std/console.sol";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 contract Pool {
-    CosmicFil public cosmicFil;
-
     mapping(address => Broker) public loans;
 
     mapping(address => uint256) public lenderBalance;
@@ -34,16 +29,10 @@ contract Pool {
     );
     event PoolUpdated(address indexed storageProvider, uint256 amount);
 
-    constructor(address _cosmicFil) {
-        cosmicFil = CosmicFil(_cosmicFil);
-    }
-
     function depositLender() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        require(cosmicFil.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
-
-        cosmicFil.transferFrom(msg.sender, address(this), msg.value);
+        require(msg.sender.balance >= msg.value, "Insufficient balance");
 
         lenderBalance[msg.sender] += msg.value;
         totalLenderBalance += msg.value;
@@ -56,9 +45,7 @@ contract Pool {
     function depositStorageProvider() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        require(cosmicFil.balanceOf(msg.sender) >= msg.value, "Insufficient balance");
-
-        cosmicFil.transferFrom(msg.sender, address(this), msg.value);
+        require(msg.sender.balance >= msg.value, "Insufficient balance");
 
         storageProviderBalance[msg.sender] += msg.value;
         totalStorageProviderBalance += msg.value;
@@ -67,20 +54,16 @@ contract Pool {
         emit StorageProviderDeposit(msg.sender, msg.value);
     }
 
-    function balance() public view returns (uint256) {
-        return cosmicFil.balanceOf(msg.sender);
-    }
-
     function requestLoan(address storageProviderOwner, address storageProviderMiner, uint256 amount)
         external
         returns (address)
     {
-        require(storageProviderBalance[msg.sender] >= amount, "Not enough collateral in the pool");
+        require(storageProviderBalance[msg.sender] >= amount / 2, "Not enough collateral in the pool");
         require(totalWorkingCapital >= amount, "Not enough working collateral in the pool");
 
         Broker broker = new Broker(address(this), storageProviderOwner, storageProviderMiner, amount);
 
-        cosmicFil.transfer(address(broker), amount * 2);
+        payable(address(broker)).transfer(amount * 2);
 
         storageProviderBalance[msg.sender] -= amount;
         totalWorkingCapital -= amount;

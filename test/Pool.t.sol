@@ -4,15 +4,11 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "./Utils.sol";
 
-import {console} from "forge-std/console.sol";
-
 import "../src/Pool.sol";
-import "../src/CosmicFil.sol";
 
 contract PoolTest is Test {
     Utils internal utils;
     Pool public pool;
-    CosmicFil cosmicFil;
 
     address payable[] internal users;
 
@@ -34,8 +30,7 @@ contract PoolTest is Test {
 
     function setUp() public {
         utils = new Utils();
-        cosmicFil = new CosmicFil("CosmicFil", "CFA");
-        pool = new Pool(address(cosmicFil));
+        pool = new Pool();
 
         users = utils.createUsers(4);
 
@@ -51,40 +46,36 @@ contract PoolTest is Test {
         anotherLender = users[3];
         vm.label(anotherLender, "Lender Bob");
 
-        cosmicFil.mint(storageProvider, 10e18);
-        cosmicFil.mint(lender, 10e18);
-        cosmicFil.mint(anotherStorageProvider, 10e18);
-        cosmicFil.mint(anotherLender, 10e18);
+        vm.deal(address(storageProvider), 100 ether);
+        vm.deal(address(lender), 100 ether);
+        vm.deal(address(anotherStorageProvider), 100 ether);
+        vm.deal(address(anotherLender), 100 ether);
     }
 
     function testLenderDeposits() public {
         vm.startPrank(lender);
-        assertEq(cosmicFil.balanceOf(lender), 10e18);
-
-        cosmicFil.approve(address(pool), 10e18);
+        assertEq(lender.balance, 100 ether);
 
         vm.expectEmit(true, false, false, true);
-        emit LenderDeposit(address(lender), 1e18);
+        emit LenderDeposit(address(lender), 1 ether);
 
-        pool.depositLender{value: 1e18}();
+        pool.depositLender{value: 1 ether}();
 
-        assertEq(cosmicFil.balanceOf(lender), 9e18);
+        assertEq(lender.balance, 99 ether);
 
         vm.stopPrank();
     }
 
     function testStorageProviderDeposits() public {
         vm.startPrank(storageProvider);
-        assertEq(cosmicFil.balanceOf(storageProvider), 10e18);
-
-        cosmicFil.approve(address(pool), 10e18);
+        assertEq(storageProvider.balance, 100 ether);
 
         vm.expectEmit(true, false, false, true);
-        emit StorageProviderDeposit(address(storageProvider), 1e18);
+        emit StorageProviderDeposit(address(storageProvider), 1 ether);
 
-        pool.depositStorageProvider{value: 1e18}();
+        pool.depositStorageProvider{value: 1 ether}();
 
-        assertEq(cosmicFil.balanceOf(storageProvider), 9e18);
+        assertEq(storageProvider.balance, 99 ether);
 
         vm.stopPrank();
     }
@@ -93,71 +84,76 @@ contract PoolTest is Test {
         vm.startPrank(storageProvider);
 
         vm.expectRevert("Not enough collateral in the pool");
-        pool.requestLoan(address(this), address(this), 10e18);
+        pool.requestLoan(address(this), address(this), 1 ether);
 
         vm.stopPrank();
     }
 
-    function testRequestLoanDeploysBroker() public {
-        vm.startPrank(lender);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositLender{value: 5e18}();
+    function testRequestLoanDeploysBroker(uint256 lenderDeposit) public {
+        vm.assume(lenderDeposit > 1 ether);
 
+        uint256 storageDeposit = 4 * lenderDeposit;
+        uint256 totalDeposit = lenderDeposit + storageDeposit;
+
+        vm.deal(lender, lenderDeposit);
+        vm.deal(storageProvider, storageDeposit);
+
+        vm.startPrank(lender);
+        pool.depositLender{value: lenderDeposit}();
         vm.stopPrank();
+
         vm.startPrank(storageProvider);
 
-        cosmicFil.approve(address(pool), 10e18);
+        pool.depositStorageProvider{value: storageDeposit}();
 
-        pool.depositStorageProvider{value: 2e18}();
+        assertEq(pool.totalLenderBalance(), lenderDeposit);
+        assertEq(pool.totalStorageProviderBalance(), storageDeposit);
+        assertEq(pool.totalWorkingCapital(), lenderDeposit);
+        assertEq(pool.totalCollateral(), totalDeposit);
+        //
+        assertEq(payable(address(pool)).balance, totalDeposit);
 
-        assertEq(pool.totalLenderBalance(), 5e18);
-        assertEq(pool.totalStorageProviderBalance(), 2e18);
-        assertEq(pool.totalCollateral(), 7e18);
+        address broker = pool.requestLoan(address(this), address(this), lenderDeposit);
 
-        address broker = pool.requestLoan(address(this), address(this), 2e18);
+        assertEq(payable(address(pool)).balance, 2 * lenderDeposit);
 
-        assertEq(pool.totalLenderBalance(), 3e18);
-        assertEq(pool.totalStorageProviderBalance(), 0e18);
-        assertEq(pool.totalCollateral(), 3e18);
+        assertEq(pool.totalLenderBalance(), 0);
+        assertEq(pool.totalStorageProviderBalance(), storageDeposit - lenderDeposit);
+        assertEq(pool.totalCollateral(), totalDeposit - 2 * lenderDeposit);
 
         vm.stopPrank();
 
-        assertEq(cosmicFil.balanceOf(broker), 4e18);
+        assertEq(broker.balance, lenderDeposit * 2);
     }
 
     function testBalance() public {
         vm.startPrank(lender);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositLender{value: 5e18}();
+        pool.depositLender{value: 5 ether}();
 
-        assertEq(pool.balance(), 5e18);
+        assertEq(payable(address(pool)).balance, 5 ether);
 
         vm.stopPrank();
     }
 
     function testTotalLenderBalance() public {
         vm.startPrank(lender);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositLender{value: 5e18}();
+        pool.depositLender{value: 5 ether}();
         vm.stopPrank();
         vm.startPrank(anotherLender);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositLender{value: 5e18}();
+        pool.depositLender{value: 5 ether}();
         vm.stopPrank();
 
-        assertEq(pool.totalLenderBalance(), 10e18);
+        assertEq(pool.totalLenderBalance(), 10 ether);
     }
 
     function testTotalStorageProviderBalance() public {
         vm.startPrank(storageProvider);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositStorageProvider{value: 5e18}();
+        pool.depositStorageProvider{value: 5 ether}();
         vm.stopPrank();
         vm.startPrank(anotherStorageProvider);
-        cosmicFil.approve(address(pool), 10e18);
-        pool.depositStorageProvider{value: 5e18}();
+        pool.depositStorageProvider{value: 5 ether}();
         vm.stopPrank();
 
-        assertEq(pool.totalStorageProviderBalance(), 10e18);
+        assertEq(pool.totalStorageProviderBalance(), 10 ether);
     }
 }
