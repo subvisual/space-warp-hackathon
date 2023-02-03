@@ -24,6 +24,8 @@ contract Broker {
     receive() external payable {}
     fallback() external payable {}
 
+    event PoolUpdated(address indexed storageProvider, address indexed _pool, uint256 amount);
+
     function getStorageProvider() public view returns (address, address) {
         return (storageProviderOwner, storageProviderMiner);
     }
@@ -34,5 +36,7 @@ contract Broker {
         loanAmount -= (amount / 2);
 
         payable(address(pool)).transfer(amount);
+
+        emit PoolUpdated(_storageProvider, _pool, amount);
     }
 }

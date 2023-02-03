@@ -32,6 +32,7 @@ contract Pool {
         address storageProviderMiner,
         uint256 amount
     );
+
     event PoolUpdated(address indexed storageProvider, uint256 amount);
 
     function depositLender() public payable {
@@ -85,7 +86,5 @@ contract Pool {
     function updatePool(address _storageProvider, uint256 amount) public {
         lockedCapital[_storageProvider] += amount / 2;
         totalWorkingCapital += amount / 2;
-
-        emit PoolUpdated(_storageProvider, amount);
     }
 }
