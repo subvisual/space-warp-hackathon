@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./Broker.sol";
 
-contract Pool is Ownable{
+contract Pool is Ownable {
     uint256 MAX_INT = 2 ** 256 - 1;
 
     mapping(address => Broker) public loans;
@@ -22,8 +22,7 @@ contract Pool is Ownable{
 
     error CallerNotChickenManager();
 
-    constructor(){
-    }
+    constructor() {}
 
     // Events
     event StorageProviderDeposit(address indexed from, uint256 value);
@@ -38,7 +37,7 @@ contract Pool is Ownable{
 
     function depositLender(address lender) public payable {
         _requireCallerIsChickenBondsManager();
-        
+
         require(msg.value > 0, "Amount must be greater than zero");
 
         lenderBalance[lender] += msg.value;
@@ -89,16 +88,13 @@ contract Pool is Ownable{
     //
     // onlyOwner
     //
-
     function setAddresses(address _chickenBondManagerAddress) external onlyOwner {
         chickenBondManagerAddress = _chickenBondManagerAddress;
         renounceOwnership();
     }
 
-
     fallback() external payable {}
     receive() external payable {}
-
 
     function updatePool(address _storageProvider, uint256 amount) public {
         lockedCapital[_storageProvider] += amount / 2;
@@ -106,6 +102,6 @@ contract Pool is Ownable{
     }
 
     function _requireCallerIsChickenBondsManager() internal view {
-        if(msg.sender != chickenBondManagerAddress) revert CallerNotChickenManager();
+        if (msg.sender != chickenBondManagerAddress) revert CallerNotChickenManager();
     }
 }

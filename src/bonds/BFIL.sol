@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 //import "forge-std/console.sol";
 
 contract BFIL is ERC20, Ownable {
-
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
-  
+
     address public chickenBondManagerAddress;
 
     function setAddresses(address _chickenBondManagerAddress) external onlyOwner {

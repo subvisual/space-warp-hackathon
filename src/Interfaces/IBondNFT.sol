@@ -3,9 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./IChickenBondManager.sol";
 
-
 interface IBondNFT {
-
     function mint(address bonder) external returns (uint256);
     function burn(uint256 tokenId) external;
     function ownerOf(uint256 tokenId) external returns (address owner);

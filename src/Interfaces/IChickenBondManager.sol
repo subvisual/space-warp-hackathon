@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.10;
 
-
 interface IChickenBondManager {
-
     event BondCreated(address indexed bonder, uint256 bondId, uint256 amount);
 
     event BondClaimed(
@@ -16,10 +14,22 @@ interface IChickenBondManager {
         bool migration
     );
 
+    event BondCancelled(
+        address indexed bonder,
+        uint256 bondId,
+        uint256 principalfilAmount,
+        uint256 minfilAmount,
+        uint256 withdrawnfilAmount
+    );
 
-    event BondCancelled(address indexed bonder, uint256 bondId, uint256 principalfilAmount, uint256 minfilAmount, uint256 withdrawnfilAmount);
-
-    event BFILRedeemed(address indexed redeemer, uint256 bfilAmount, uint256 minfilAmount, uint256 filAmount, uint256 yTokens, uint256 redemptionFee);
+    event BFILRedeemed(
+        address indexed redeemer,
+        uint256 bfilAmount,
+        uint256 minfilAmount,
+        uint256 filAmount,
+        uint256 yTokens,
+        uint256 redemptionFee
+    );
 
     enum BondStatus {
         nonExistent,
@@ -35,7 +45,6 @@ interface IChickenBondManager {
         uint64 endTime; // Timestamp of chicken in/out event
         BondStatus status;
     }
-
 
     function createBond() external payable returns (uint256);
     function chickenOut(uint256 _bondID, uint256 _minFIL) external;
