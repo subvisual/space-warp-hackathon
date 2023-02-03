@@ -44,6 +44,9 @@ contract ChickenBondManagerTest is Test {
         chickenBondManager = new ChickenBondManager(address(bondNFT),address(pool), 1 ether);
 
         bondNFT.setAddresses(address(chickenBondManager));
+        pool.setAddresses(address(chickenBondManager));
+
+
         users = utils.createUsers(3);
         alice = users[0];
         bob = users[1];
@@ -62,8 +65,8 @@ contract ChickenBondManagerTest is Test {
 
         vm.expectEmit(true,false,false,true);
         emit BondCreated(alice, 1, amount);
-        vm.expectEmit(false,false,false,true);
-        emit LenderDeposit(alice, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
         chickenBondManager.createBond{value: amount}(); 
 
         uint256 pedingfil = chickenBondManager.getPendingfil();

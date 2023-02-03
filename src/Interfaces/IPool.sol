@@ -7,7 +7,7 @@ import {console} from "forge-std/console.sol";
 
 interface IPool {
 
-    function depositLender() external payable ;
+    function depositLender(address lender) external payable ;
 
     function depositStorageProvider() external payable ;
 

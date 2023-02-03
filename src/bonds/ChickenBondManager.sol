@@ -10,6 +10,8 @@ import "../Interfaces/IPool.sol";
 // import "forge-std/console.sol";
 
 error BondAmountNotMet();
+error BondNotOwner();
+error BondNotActive();
 
 contract ChickenBondManager is IChickenBondManager {
 
@@ -17,6 +19,7 @@ contract ChickenBondManager is IChickenBondManager {
     IBondNFT immutable public bondNFT;
     uint256 public immutable MIN_BOND_AMOUNT;             // Minimum amount of fil that needs to be bonded
     uint256 public totalWeightedStartTimes; // Sum of `filAmount * startTime` for all outstanding bonds (used to tell weighted average bond age)
+    uint256 public countChickenOut;
     mapping (uint256 => BondData) private idToBondData;
     uint256 private pendingfil;          // Total pending fil. It will always be in SP (B.Protocol)
     uint256 private permanentfil;          // Total pending fil. It will always be in SP (B.Protocol)
@@ -47,10 +50,7 @@ contract ChickenBondManager is IChickenBondManager {
         totalWeightedStartTimes += msg.value * block.timestamp;
 
 
-        // Deposit the fil to the B.Protocol fil vault
-        //_depositToBAMM(_filAmount);
-        //TODO deposit to pool 
-        pool.depositLender{value: msg.value}();
+        pool.depositLender{value: msg.value}(msg.sender);
 
         emit BondCreated(msg.sender, bondID, msg.value);
 
@@ -58,22 +58,21 @@ contract ChickenBondManager is IChickenBondManager {
     }
 
     function chickenOut(uint256 _bondID, uint256 _minFIL) external{
-        //BondData memory bond = idToBondData[_bondID];
+        BondData memory bond = idToBondData[_bondID];
 
-        //if (msg.sender != bondNFT.ownerOf(_bondID), "CBM: Caller must own the bond");
+        if (msg.sender != bondNFT.ownerOf(_bondID)) revert BondNotOwner();
 
-        //if(status != BondStatus.active, "CBM: Bond must be active");
+        if(bond.status != BondStatus.active) revert BondNotActive();
 
         ////_updateAccrualParameter();
 
-        //idToBondData[_bondID].status = BondStatus.chickenedOut;
-        //idToBondData[_bondID].endTime = uint64(block.timestamp);
-        //uint80 newDna = bondNFT.setFinalExtraData(msg.sender, _bondID, permanentfil / NFT_RANDOMNESS_DIVISOR);
+        idToBondData[_bondID].status = BondStatus.chickenedOut;
+        idToBondData[_bondID].endTime = uint64(block.timestamp);
 
-        //countChickenOut += 1;
+        countChickenOut += 1;
 
-        //pendingfil -= bond.filAmount;
-        //totalWeightedStartTimes -= bond.filAmount * bond.startTime;
+        pendingfil -= bond.filAmount;
+        totalWeightedStartTimes -= bond.filAmount * bond.startTime;
 
         ///* In practice, there could be edge cases where the pendingfil is not fully backed:
         //* - Heavy liquidations, and before yield has been converted
@@ -87,7 +86,7 @@ contract ChickenBondManager is IChickenBondManager {
         //// Withdraw from B.Protocol fil vault
         //_withdrawFromBAMM(filToWithdraw, msg.sender);
 
-        //emit BondCancelled(msg.sender, _bondID, bond.filAmount, _minfil, filToWithdraw);
+        emit BondCancelled(msg.sender, _bondID, bond.filAmount, bond.filAmount, bond.filAmount);
     }
 
         function chickenIn(uint256 _bondID) external{
