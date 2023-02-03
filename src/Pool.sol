@@ -19,6 +19,9 @@ contract Pool {
     uint256 public totalStorageProviderBalance;
     uint256 public totalCollateral;
 
+    receive() external payable {}
+    fallback() external payable {}
+
     // Events
     event StorageProviderDeposit(address indexed from, uint256 value);
     event LenderDeposit(address indexed from, uint256 value);
@@ -60,39 +63,19 @@ contract Pool {
         require(storageProviderBalance[msg.sender] >= amount, "Not enough collateral in the pool");
         require(totalWorkingCapital >= amount, "Not enough working collateral in the pool");
 
-        Broker broker = new Broker(address(this), storageProviderOwner, storageProviderMiner, amount);
+        Broker broker = new Broker(payable(address(this)), storageProviderOwner, storageProviderMiner, amount);
 
         payable(address(broker)).transfer(amount * 2);
 
-        if (amount >= storageProviderBalance[msg.sender]) {
-            storageProviderBalance[msg.sender] = 0;
-        } else {
-            storageProviderBalance[msg.sender] -= amount;
-        }
+        storageProviderBalance[msg.sender] -= amount;
 
-        if (amount >= totalWorkingCapital) {
-            totalWorkingCapital = 0;
-        } else {
-            totalWorkingCapital -= amount;
-        }
+        totalWorkingCapital -= amount;
 
-        if (amount >= totalStorageProviderBalance) {
-            totalStorageProviderBalance -= 0;
-        } else {
-            totalStorageProviderBalance -= amount;
-        }
+        totalStorageProviderBalance -= amount;
 
-        if (amount >= totalLenderBalance) {
-            totalLenderBalance = 0;
-        } else {
-            totalLenderBalance -= amount;
-        }
+        totalLenderBalance -= amount;
 
-        if (amount * 2 >= totalCollateral) {
-            totalCollateral = 0;
-        } else {
-            totalCollateral -= amount * 2;
-        }
+        totalCollateral -= amount * 2;
 
         emit NewBrokerDeployed(address(broker), address(this), storageProviderOwner, storageProviderMiner, amount);
 

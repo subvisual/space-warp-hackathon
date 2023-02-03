@@ -11,7 +11,7 @@ contract BrokerTest is Test {
 
     function setUp() public {
         pool = new Pool();
-        broker = new Broker(address(pool), address(0x2),address(0x3), 2 ether);
+        broker = new Broker(payable(address(pool)), address(0x2),address(0x3), 2 ether);
     }
 
     function testGetStorageProvider() public {
@@ -21,20 +21,26 @@ contract BrokerTest is Test {
         assertEq(miner, address(0x3));
     }
 
-    function testUpdatePool() public {
-        assertEq(broker.loanAmount(), 2 ether);
-        vm.deal(address(broker), 2 ether);
-        assertEq((address(broker).balance), 2 ether);
+    function testUpdatePool(uint256 reward) public {
+        reward = bound(reward, 1 ether, 100 ether);
 
-        // assertEq(pool.lockedCapital(address(0x2)), 0e18);
-        // assertEq(pool.totalWorkingCapital(), 0e18);
-        //
-        // broker.reward(2e18);
-        //
-        // assertEq(broker.loanAmount(), 3e18);
-        // assertEq(cosmicFil.balanceOf(address(broker)), 0e18);
-        //
-        // assertEq(pool.lockedCapital(address(0x2)), 1e18);
-        // assertEq(pool.totalWorkingCapital(), 1e18);
+        uint256 totalLoan = 2 * reward;
+
+        broker = new Broker(payable(address(pool)), address(0x2),address(0x3),  totalLoan);
+
+        assertEq(broker.loanAmount(), totalLoan);
+
+        vm.deal(address(broker), totalLoan);
+        assertEq((address(broker).balance), totalLoan);
+
+        assertEq(pool.lockedCapital(address(0x2)), 0);
+        assertEq(pool.totalWorkingCapital(), 0);
+
+        broker.reward(reward);
+
+        assertEq(broker.loanAmount(), totalLoan - reward / 2);
+
+        assertEq(pool.lockedCapital(address(0x2)), reward / 2);
+        assertEq(pool.totalWorkingCapital(), reward / 2);
     }
 }

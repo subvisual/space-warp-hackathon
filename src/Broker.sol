@@ -9,7 +9,12 @@ contract Broker {
     address public storageProviderMiner;
     uint256 public loanAmount;
 
-    constructor(address _pool, address _storageProviderOwner, address _storageProviderMiner, uint256 _loanAmount) {
+    constructor(
+        address payable _pool,
+        address _storageProviderOwner,
+        address _storageProviderMiner,
+        uint256 _loanAmount
+    ) {
         pool = Pool(_pool);
         storageProviderOwner = _storageProviderOwner;
         storageProviderMiner = _storageProviderMiner;
