@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.10;
 
+
 interface IChickenBondManager {
 
     event BondCreated(address indexed bonder, uint256 bondId, uint256 amount);
@@ -8,17 +9,17 @@ interface IChickenBondManager {
     event BondClaimed(
         address indexed bonder,
         uint256 bondId,
-        uint256 lusdAmount,
-        uint256 bLusdAmount,
-        uint256 lusdSurplus,
+        uint256 filAmount,
+        uint256 bfilAmount,
+        uint256 filSurplus,
         uint256 chickenInFeeAmount,
         bool migration
     );
 
 
-    event BondCancelled(address indexed bonder, uint256 bondId, uint256 principalLusdAmount, uint256 minLusdAmount, uint256 withdrawnLusdAmount);
+    event BondCancelled(address indexed bonder, uint256 bondId, uint256 principalfilAmount, uint256 minfilAmount, uint256 withdrawnfilAmount);
 
-    event BLUSDRedeemed(address indexed redeemer, uint256 bLusdAmount, uint256 minLusdAmount, uint256 lusdAmount, uint256 yTokens, uint256 redemptionFee);
+    event BFILRedeemed(address indexed redeemer, uint256 bfilAmount, uint256 minfilAmount, uint256 filAmount, uint256 yTokens, uint256 redemptionFee);
 
     enum BondStatus {
         nonExistent,
@@ -28,14 +29,14 @@ interface IChickenBondManager {
     }
 
     struct BondData {
-        uint256 lusdAmount;
-        uint64 claimedBLUSD; // In BLUSD units without decimals
+        uint256 filAmount;
+        uint64 claimedBFIL; // In BFIL units without decimals
         uint64 startTime;
         uint64 endTime; // Timestamp of chicken in/out event
         BondStatus status;
     }
 
-    error BondAmountNotMet();
+
     function createBond() external payable returns (uint256);
     function chickenOut(uint256 _bondID, uint256 _minFIL) external;
     function chickenIn(uint256 _bondID) external;
@@ -43,7 +44,7 @@ interface IChickenBondManager {
 
     // getters
     //function calcRedemptionFeePercentage(uint256 _fractionOfBFILToRedeem) external view returns (uint256);
-    //function getBondData(uint256 _bondID) external view returns (uint256 lusdAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status);
+    //function getBondData(uint256 _bondID) external view returns (uint256 filAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status);
     //function getFILToAcquire(uint256 _bondID) external view returns (uint256);
     //function calcAccruedBFIL(uint256 _bondID) external view returns (uint256);
     //function calcBondBFILCap(uint256 _bondID) external view returns (uint256);

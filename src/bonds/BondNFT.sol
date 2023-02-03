@@ -16,6 +16,8 @@ contract BondNFT is ERC721, Ownable {
 
     address public chickenBondManagerAddress;
 
+    error CallerNotChickenManager();
+
     constructor(
         string memory _name,
         string memory _symbol,
@@ -34,6 +36,7 @@ contract BondNFT is ERC721, Ownable {
                 uint256 tokenId = totalSupply + 1;
                 _mint(bonder, tokenId);
                 totalSupply++;
+                return tokenId ;
         }
     }
 
@@ -79,6 +82,6 @@ contract BondNFT is ERC721, Ownable {
     }
 
     function _requireCallerIsChickenBondsManager() internal view {
-        require(msg.sender == chickenBondManagerAddress, "BFil: Caller must be ChickenBondManager");
+        if(msg.sender != chickenBondManagerAddress) revert CallerNotChickenManager();
     }
 }
