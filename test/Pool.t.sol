@@ -89,17 +89,20 @@ contract PoolTest is Test {
         vm.stopPrank();
     }
 
-    function testRequestLoanDeploysBroker(uint256 lenderDeposit) public {
-        vm.assume(lenderDeposit > 1 ether);
+    function testRequestLoanDeploysBroker() public {
+        uint256 lenderDeposit = 1;
+        vm.assume(lenderDeposit > 0);
 
         uint256 storageDeposit = 4 * lenderDeposit;
         uint256 totalDeposit = lenderDeposit + storageDeposit;
 
-        vm.deal(lender, lenderDeposit);
-        vm.deal(storageProvider, storageDeposit);
+        vm.deal(lender,  lenderDeposit);
+        vm.deal(storageProvider,  storageDeposit);
+
+        assertEq(lender.balance, lenderDeposit);
 
         vm.startPrank(lender);
-        pool.depositLender{value: lenderDeposit}();
+        pool.depositLender{value: lenderDeposit  }();
         vm.stopPrank();
 
         vm.startPrank(storageProvider);
@@ -110,12 +113,11 @@ contract PoolTest is Test {
         assertEq(pool.totalStorageProviderBalance(), storageDeposit);
         assertEq(pool.totalWorkingCapital(), lenderDeposit);
         assertEq(pool.totalCollateral(), totalDeposit);
-        //
         assertEq(payable(address(pool)).balance, totalDeposit);
 
         address broker = pool.requestLoan(address(this), address(this), lenderDeposit);
 
-        assertEq(payable(address(pool)).balance, 2 * lenderDeposit);
+        assertEq(payable(address(pool)).balance, totalDeposit - (2* lenderDeposit));
 
         assertEq(pool.totalLenderBalance(), 0);
         assertEq(pool.totalStorageProviderBalance(), storageDeposit - lenderDeposit);

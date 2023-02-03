@@ -32,8 +32,6 @@ contract Pool {
     function depositLender() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        require(msg.sender.balance >= msg.value, "Insufficient balance");
-
         lenderBalance[msg.sender] += msg.value;
         totalLenderBalance += msg.value;
         totalWorkingCapital += msg.value;
@@ -44,8 +42,6 @@ contract Pool {
 
     function depositStorageProvider() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
-
-        require(msg.sender.balance >= msg.value, "Insufficient balance");
 
         storageProviderBalance[msg.sender] += msg.value;
         totalStorageProviderBalance += msg.value;
