@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./Broker.sol";
 
-contract Pool {
+contract Pool is Ownable{
     uint256 MAX_INT = 2 ** 256 - 1;
 
     mapping(address => Broker) public loans;
@@ -17,8 +18,12 @@ contract Pool {
     uint256 public totalStorageProviderBalance;
     uint256 public totalCollateral;
 
-    receive() external payable {}
-    fallback() external payable {}
+    address public chickenBondManagerAddress;
+
+    error CallerNotChickenManager();
+
+    constructor(){
+    }
 
     // Events
     event StorageProviderDeposit(address indexed from, uint256 value);
@@ -31,15 +36,17 @@ contract Pool {
         uint256 amount
     );
 
-    function depositLender() public payable {
+    function depositLender(address lender) public payable {
+        _requireCallerIsChickenBondsManager();
+        
         require(msg.value > 0, "Amount must be greater than zero");
 
-        lenderBalance[msg.sender] += msg.value;
+        lenderBalance[lender] += msg.value;
         totalLenderBalance += msg.value;
         totalWorkingCapital += msg.value;
         totalCollateral += msg.value;
 
-        emit LenderDeposit(msg.sender, msg.value);
+        emit LenderDeposit(lender, msg.value);
     }
 
     function depositStorageProvider() public payable {
@@ -79,8 +86,22 @@ contract Pool {
         return address(broker);
     }
 
+    //
+    // onlyOwner
+    //
+
+    function setAddresses(address _chickenBondManagerAddress) external onlyOwner {
+        chickenBondManagerAddress = _chickenBondManagerAddress;
+        renounceOwnership();
+    }
+
+
     function updatePool(address _storageProvider, uint256 amount) public {
         lockedCapital[_storageProvider] += amount / 2;
         totalWorkingCapital += amount / 2;
+    }
+
+    function _requireCallerIsChickenBondsManager() internal view {
+        if(msg.sender != chickenBondManagerAddress) revert CallerNotChickenManager();
     }
 }

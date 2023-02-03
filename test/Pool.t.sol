@@ -46,6 +46,8 @@ contract PoolTest is Test {
         anotherLender = users[3];
         vm.label(anotherLender, "Lender Bob");
 
+        pool.setAddresses(lender);
+
         vm.deal(address(storageProvider), 100 ether);
         vm.deal(address(lender), 100 ether);
         vm.deal(address(anotherStorageProvider), 100 ether);
@@ -59,7 +61,7 @@ contract PoolTest is Test {
         vm.expectEmit(true, false, false, true);
         emit LenderDeposit(address(lender), 1 ether);
 
-        pool.depositLender{value: 1 ether}();
+        pool.depositLender{value: 1 ether}(lender);
 
         assertEq(lender.balance, 99 ether);
 
@@ -97,7 +99,7 @@ contract PoolTest is Test {
 
         assertEq(lender.balance, lenderDeposit);
 
-        pool.depositLender{value: lenderDeposit}();
+        pool.depositLender{value: lenderDeposit}(lender);
 
         assertEq(lender.balance, 0);
 
@@ -117,7 +119,7 @@ contract PoolTest is Test {
 
         vm.startPrank(lender);
         assertEq(lender.balance, lenderDeposit);
-        pool.depositLender{value: lenderDeposit}();
+        pool.depositLender{value: lenderDeposit}(lender);
         vm.stopPrank();
 
         vm.startPrank(storageProvider);
@@ -144,7 +146,7 @@ contract PoolTest is Test {
 
     function testBalance() public {
         vm.startPrank(lender);
-        pool.depositLender{value: 5 ether}();
+        pool.depositLender{value: 5 ether}(lender);
 
         assertEq(payable(address(pool)).balance, 5 ether);
 
@@ -153,10 +155,10 @@ contract PoolTest is Test {
 
     function testTotalLenderBalance() public {
         vm.startPrank(lender);
-        pool.depositLender{value: 5 ether}();
+        pool.depositLender{value: 5 ether}(lender);
         vm.stopPrank();
         vm.startPrank(anotherLender);
-        pool.depositLender{value: 5 ether}();
+        pool.depositLender{value: 5 ether}(lender);
         vm.stopPrank();
 
         assertEq(pool.totalLenderBalance(), 10 ether);
