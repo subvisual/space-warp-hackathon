@@ -28,6 +28,9 @@ contract PoolTest is Test {
         uint256 amount
     );
 
+    fallback() external payable {}
+    receive() external payable {}
+
     function setUp() public {
         utils = new Utils();
         pool = new Pool();
@@ -171,5 +174,19 @@ contract PoolTest is Test {
         vm.stopPrank();
 
         assertEq(pool.totalStorageProviderBalance(), 10 ether);
+    }
+
+    function testWithdraw() public {
+        vm.deal(address(pool), 10 ether);
+
+        assertEq(address(pool).balance, 10 ether);
+        assertEq(lender.balance, 100 ether);
+
+        vm.startPrank(lender);
+
+        pool.withdraw(address(this), 1 ether);
+        assertEq(lender.balance, 100 ether);
+
+        vm.stopPrank();
     }
 }

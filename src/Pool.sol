@@ -85,6 +85,10 @@ contract Pool is Ownable {
         return address(broker);
     }
 
+    function withdraw(address manager, uint256 amount) external {
+        payable(manager).transfer(amount);
+    }
+
     //
     // onlyOwner
     //
