@@ -86,6 +86,7 @@ contract Pool is Ownable {
     }
 
     function withdraw(address manager, uint256 amount) external {
+        _requireCallerIsChickenBondsManager();
         payable(manager).transfer(amount);
     }
 

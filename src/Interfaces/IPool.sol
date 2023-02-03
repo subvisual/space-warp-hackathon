@@ -15,4 +15,6 @@ interface IPool {
         returns (address);
 
     function updatePool(address _storageProvider, uint256 amount) external;
+
+    function withdraw(address manager, uint256 amount) external;
 }

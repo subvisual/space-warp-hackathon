@@ -12,6 +12,8 @@ import "../Interfaces/IPool.sol";
 error BondAmountNotMet();
 error BondNotOwner();
 error BondNotActive();
+error MinValueGreaterThanNominal();
+error NotEnoughFilInPool();
 
 contract ChickenBondManager is IChickenBondManager {
     IPool public immutable pool;
@@ -75,17 +77,10 @@ contract ChickenBondManager is IChickenBondManager {
         pendingfil -= bond.filAmount;
         totalWeightedStartTimes -= bond.filAmount * bond.startTime;
 
-        ///* In practice, there could be edge cases where the pendingfil is not fully backed:
-        //* - Heavy liquidations, and before yield has been converted
-        //* - Heavy loss-making liquidations, i.e. at <100% CR
-        //* - SP or B.Protocol vault hack that drains fil
-        //*
-        //* The user can decide how to handle chickenOuts if/when the recorded pendingfil is not fully backed by actual
-        //* fil in B.Protocol / the SP, by adjusting _minfil */
-        //uint256 filToWithdraw = _requireEnoughfilInBAMM(bond.filAmount, _minfil);
+        uint256 filToWithdraw = _requireEnoughfilInPool(bond.filAmount, _minFIL);
 
         //// Withdraw from B.Protocol fil vault
-        //_withdrawFromBAMM(filToWithdraw, msg.sender);
+        pool.withdraw(msg.sender, filToWithdraw);
 
         emit BondCancelled(msg.sender, _bondID, bond.filAmount, bond.filAmount, bond.filAmount);
     }
@@ -152,6 +147,20 @@ contract ChickenBondManager is IChickenBondManager {
     function redeem(uint256 _bFILToRedeem, uint256 _minFILFromBAMMSPVault) external returns (uint256, uint256) {
         return (0, 0);
     }
+
+
+    function _requireEnoughfilInPool(uint256 _requestedFIL, uint256 _minFIL) internal view returns (uint256) {
+        if (_requestedFIL < _minFIL) revert MinValueGreaterThanNominal();
+
+        uint256 filInPool = address(pool).balance;
+
+        if(filInPool < _minFIL) revert NotEnoughFilInPool();
+
+        uint256 filToWithdraw = Math.min(_requestedFIL, filInPool );
+
+        return filToWithdraw;
+    }
+
 
     // Bond getters
 
