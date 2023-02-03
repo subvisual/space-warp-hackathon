@@ -124,7 +124,7 @@ contract ChickenBondManagerTest is Test {
 
         (uint256 filAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status) = chickenBondManager.getBondData(bondId);
 
-        assertEq(claimedBFIL, 1);
+        assertEq(claimedBFIL, 0);
 
 
         vm.stopPrank();
