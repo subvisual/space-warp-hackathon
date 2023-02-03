@@ -2,7 +2,24 @@
 pragma solidity ^0.8.10;
 
 interface IChickenBondManager {
-    // Valid values for `status` returned by `getBondData()`
+
+    event BondCreated(address indexed bonder, uint256 bondId, uint256 amount);
+
+    event BondClaimed(
+        address indexed bonder,
+        uint256 bondId,
+        uint256 lusdAmount,
+        uint256 bLusdAmount,
+        uint256 lusdSurplus,
+        uint256 chickenInFeeAmount,
+        bool migration
+    );
+
+
+    event BondCancelled(address indexed bonder, uint256 bondId, uint256 principalLusdAmount, uint256 minLusdAmount, uint256 withdrawnLusdAmount);
+
+    event BLUSDRedeemed(address indexed redeemer, uint256 bLusdAmount, uint256 minLusdAmount, uint256 lusdAmount, uint256 yTokens, uint256 redemptionFee);
+
     enum BondStatus {
         nonExistent,
         active,
@@ -10,7 +27,16 @@ interface IChickenBondManager {
         chickenedIn
     }
 
-    function createBond(uint256 _lusdAmount) external returns (uint256);
+    struct BondData {
+        uint256 lusdAmount;
+        uint64 claimedBLUSD; // In BLUSD units without decimals
+        uint64 startTime;
+        uint64 endTime; // Timestamp of chicken in/out event
+        BondStatus status;
+    }
+
+    error BondAmountNotMet();
+    function createBond() external payable returns (uint256);
     function chickenOut(uint256 _bondID, uint256 _minFIL) external;
     function chickenIn(uint256 _bondID) external;
     function redeem(uint256 _bFILToRedeem, uint256 _minFILFromBAMMSPVault) external returns (uint256, uint256);
