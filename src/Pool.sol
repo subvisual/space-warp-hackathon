@@ -3,8 +3,6 @@ pragma solidity ^0.8.13;
 
 import "./Broker.sol";
 
-import {console} from "forge-std/console.sol";
-
 contract Pool {
     uint256 MAX_INT = 2 ** 256 - 1;
 
@@ -32,8 +30,6 @@ contract Pool {
         address storageProviderMiner,
         uint256 amount
     );
-
-    event PoolUpdated(address indexed storageProvider, uint256 amount);
 
     function depositLender() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
