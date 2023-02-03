@@ -16,19 +16,18 @@ contract Broker {
         loanAmount = _loanAmount;
     }
 
+    receive() external payable {}
     fallback() external payable {}
 
     function getStorageProvider() public view returns (address, address) {
         return (storageProviderOwner, storageProviderMiner);
     }
 
-
     function reward(uint256 amount) public {
         pool.updatePool(storageProviderOwner, amount);
 
         loanAmount -= (amount / 2);
 
-        // address payable broker = payable(address(this));
-        // broker.transfer(address(pool), amount);
+        payable(address(pool)).transfer(amount);
     }
 }

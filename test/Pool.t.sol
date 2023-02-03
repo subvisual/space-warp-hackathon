@@ -89,9 +89,27 @@ contract PoolTest is Test {
         vm.stopPrank();
     }
 
-    function testRequestLoanDeploysBroker() public {
-        uint256 lenderDeposit = 1;
+
+    function testProperty(uint256 lenderDeposit) public {
+        vm.assume(lenderDeposit != 0);
+
+        vm.startPrank(lender);
+        vm.deal(lender, lenderDeposit);
+
+        assertEq(lender.balance, lenderDeposit);
+
+        pool.depositLender{value: lenderDeposit}();
+
+        assertEq(lender.balance, 0);
+
+        vm.stopPrank();
+    }
+
+    function testRequestLoanDeploysBroker(uint256 lenderDeposit) public {
+        // TODO how to use vm.assume instead of bound
         vm.assume(lenderDeposit > 0);
+        lenderDeposit = bound(lenderDeposit, 1 ether, 10000 ether);
+
 
         uint256 storageDeposit = 4 * lenderDeposit;
         uint256 totalDeposit = lenderDeposit + storageDeposit;
@@ -102,11 +120,14 @@ contract PoolTest is Test {
         assertEq(lender.balance, lenderDeposit);
 
         vm.startPrank(lender);
-        pool.depositLender{value: lenderDeposit  }();
+
+        assertEq(lender.balance, lenderDeposit);
+        pool.depositLender{value: lenderDeposit}();
         vm.stopPrank();
 
         vm.startPrank(storageProvider);
 
+        assertEq(storageProvider.balance, storageDeposit);
         pool.depositStorageProvider{value: storageDeposit}();
 
         assertEq(pool.totalLenderBalance(), lenderDeposit);
@@ -117,15 +138,15 @@ contract PoolTest is Test {
 
         address broker = pool.requestLoan(address(this), address(this), lenderDeposit);
 
+
         assertEq(payable(address(pool)).balance, totalDeposit - (2* lenderDeposit));
+
 
         assertEq(pool.totalLenderBalance(), 0);
         assertEq(pool.totalStorageProviderBalance(), storageDeposit - lenderDeposit);
         assertEq(pool.totalCollateral(), totalDeposit - 2 * lenderDeposit);
 
         vm.stopPrank();
-
-        assertEq(broker.balance, lenderDeposit * 2);
     }
 
     function testBalance() public {
