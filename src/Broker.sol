@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "./Pool.sol";
 
@@ -20,6 +20,9 @@ contract Broker {
         storageProviderMiner = _storageProviderMiner;
         loanAmount = _loanAmount;
     }
+
+    fallback() external payable {}
+    receive() external payable {}
 
     event PoolUpdated(address indexed storageProviderOwner, address indexed pool, uint256 indexed amount);
 

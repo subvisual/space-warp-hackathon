@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./Broker.sol";
@@ -94,6 +94,10 @@ contract Pool is Ownable{
         chickenBondManagerAddress = _chickenBondManagerAddress;
         renounceOwnership();
     }
+
+
+    fallback() external payable {}
+    receive() external payable {}
 
 
     function updatePool(address _storageProvider, uint256 amount) public {

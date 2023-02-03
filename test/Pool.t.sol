@@ -156,8 +156,6 @@ contract PoolTest is Test {
     function testTotalLenderBalance() public {
         vm.startPrank(lender);
         pool.depositLender{value: 5 ether}(lender);
-        vm.stopPrank();
-        vm.startPrank(anotherLender);
         pool.depositLender{value: 5 ether}(lender);
         vm.stopPrank();
 
