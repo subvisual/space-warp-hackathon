@@ -59,6 +59,7 @@ contract ChickenBondManagerTest is Test {
 
         bondNFT.setAddresses(address(chickenBondManager));
         pool.setAddresses(address(chickenBondManager));
+        bfilToken.setAddresses(address(chickenBondManager));
 
         users = utils.createUsers(3);
         alice = users[0];
@@ -102,9 +103,76 @@ contract ChickenBondManagerTest is Test {
         vm.stopPrank();
     }
 
-    function testChickenIn() public {}
+    function testChickenIn(uint256 amount) public {
 
-    function testChickenOut() public {}
+        vm.assume(amount >= 1 ether);
+        vm.deal(alice, amount);
 
-    function testRedeem() public {}
+        vm.startPrank(alice);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        uint256 bondId = chickenBondManager.createBond{value: amount}();
+
+        uint256 pedingfil = chickenBondManager.getPendingfil();
+
+        assertEq(pedingfil, amount);
+
+        chickenBondManager.chickenIn(bondId );
+
+        (uint256 filAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status) = chickenBondManager.getBondData(bondId);
+
+        assertEq(claimedBFIL, 1);
+
+
+        vm.stopPrank();
+
+    }
+
+    function testChickenOut(uint256 amount) public {
+        vm.assume(amount >= 1 ether);
+        vm.deal(alice, amount);
+
+        vm.startPrank(alice);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        uint256 bondId = chickenBondManager.createBond{value: amount}();
+
+
+        uint256 pedingfil = chickenBondManager.getPendingfil();
+
+        assertEq(pedingfil, amount);
+
+        chickenBondManager.chickenOut(bondId,0);
+
+        vm.stopPrank();
+    }
+
+    function testRedeem(uint256 amount) public {
+        vm.assume(amount >= 1 ether);
+        vm.deal(alice, amount);
+
+        vm.startPrank(alice);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        uint256 bondId = chickenBondManager.createBond{value: amount}();
+
+        uint256 pedingfil = chickenBondManager.getPendingfil();
+
+        assertEq(pedingfil, amount);
+
+        chickenBondManager.chickenOut(bondId,0);
+
+
+        chickenBondManager.redeem(1,0);
+        vm.stopPrank();
+    }
 }
