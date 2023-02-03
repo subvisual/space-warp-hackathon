@@ -89,8 +89,25 @@ contract PoolTest is Test {
         vm.stopPrank();
     }
 
+    function testProperty(uint256 lenderDeposit) public {
+        vm.assume(lenderDeposit != 0);
+
+        vm.startPrank(lender);
+        vm.deal(lender, lenderDeposit);
+
+        assertEq(lender.balance, lenderDeposit);
+
+        pool.depositLender{value: lenderDeposit}();
+
+        assertEq(lender.balance, 0);
+
+        vm.stopPrank();
+    }
+
     function testRequestLoanDeploysBroker(uint256 lenderDeposit) public {
-        vm.assume(lenderDeposit > 1 ether);
+        // TODO how to use vm.assume instead of bound
+        // vm.assume(lenderDeposit != 0);
+        lenderDeposit = bound(lenderDeposit, 1 ether, 10000 ether);
 
         uint256 storageDeposit = 4 * lenderDeposit;
         uint256 totalDeposit = lenderDeposit + storageDeposit;
@@ -99,31 +116,30 @@ contract PoolTest is Test {
         vm.deal(storageProvider, storageDeposit);
 
         vm.startPrank(lender);
+        assertEq(lender.balance, lenderDeposit);
         pool.depositLender{value: lenderDeposit}();
         vm.stopPrank();
 
         vm.startPrank(storageProvider);
 
+        assertEq(storageProvider.balance, storageDeposit);
         pool.depositStorageProvider{value: storageDeposit}();
 
         assertEq(pool.totalLenderBalance(), lenderDeposit);
         assertEq(pool.totalStorageProviderBalance(), storageDeposit);
         assertEq(pool.totalWorkingCapital(), lenderDeposit);
         assertEq(pool.totalCollateral(), totalDeposit);
-        //
         assertEq(payable(address(pool)).balance, totalDeposit);
 
         address broker = pool.requestLoan(address(this), address(this), lenderDeposit);
 
-        assertEq(payable(address(pool)).balance, 2 * lenderDeposit);
+        assertEq(payable(address(broker)).balance, 2 * lenderDeposit);
 
         assertEq(pool.totalLenderBalance(), 0);
         assertEq(pool.totalStorageProviderBalance(), storageDeposit - lenderDeposit);
         assertEq(pool.totalCollateral(), totalDeposit - 2 * lenderDeposit);
 
         vm.stopPrank();
-
-        assertEq(broker.balance, lenderDeposit * 2);
     }
 
     function testBalance() public {

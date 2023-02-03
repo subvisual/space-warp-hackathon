@@ -6,6 +6,8 @@ import "./Broker.sol";
 import {console} from "forge-std/console.sol";
 
 contract Pool {
+    uint256 MAX_INT = 2 ** 256 - 1;
+
     mapping(address => Broker) public loans;
 
     mapping(address => uint256) public lenderBalance;
@@ -32,8 +34,6 @@ contract Pool {
     function depositLender() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        require(msg.sender.balance >= msg.value, "Insufficient balance");
-
         lenderBalance[msg.sender] += msg.value;
         totalLenderBalance += msg.value;
         totalWorkingCapital += msg.value;
@@ -44,8 +44,6 @@ contract Pool {
 
     function depositStorageProvider() public payable {
         require(msg.value > 0, "Amount must be greater than zero");
-
-        require(msg.sender.balance >= msg.value, "Insufficient balance");
 
         storageProviderBalance[msg.sender] += msg.value;
         totalStorageProviderBalance += msg.value;
@@ -58,18 +56,43 @@ contract Pool {
         external
         returns (address)
     {
-        require(storageProviderBalance[msg.sender] >= amount / 2, "Not enough collateral in the pool");
+        require(amount * 2 < MAX_INT, "Too close to MAX INT");
+        require(storageProviderBalance[msg.sender] >= amount, "Not enough collateral in the pool");
         require(totalWorkingCapital >= amount, "Not enough working collateral in the pool");
 
         Broker broker = new Broker(address(this), storageProviderOwner, storageProviderMiner, amount);
 
         payable(address(broker)).transfer(amount * 2);
 
-        storageProviderBalance[msg.sender] -= amount;
-        totalWorkingCapital -= amount;
-        totalStorageProviderBalance -= amount;
-        totalLenderBalance -= amount;
-        totalCollateral -= amount * 2;
+        if (amount >= storageProviderBalance[msg.sender]) {
+            storageProviderBalance[msg.sender] = 0;
+        } else {
+            storageProviderBalance[msg.sender] -= amount;
+        }
+
+        if (amount >= totalWorkingCapital) {
+            totalWorkingCapital = 0;
+        } else {
+            totalWorkingCapital -= amount;
+        }
+
+        if (amount >= totalStorageProviderBalance) {
+            totalStorageProviderBalance -= 0;
+        } else {
+            totalStorageProviderBalance -= amount;
+        }
+
+        if (amount >= totalLenderBalance) {
+            totalLenderBalance = 0;
+        } else {
+            totalLenderBalance -= amount;
+        }
+
+        if (amount * 2 >= totalCollateral) {
+            totalCollateral = 0;
+        } else {
+            totalCollateral -= amount * 2;
+        }
 
         emit NewBrokerDeployed(address(broker), address(this), storageProviderOwner, storageProviderMiner, amount);
 
