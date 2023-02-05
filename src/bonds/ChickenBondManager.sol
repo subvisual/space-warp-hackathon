@@ -82,7 +82,7 @@ contract ChickenBondManager is IChickenBondManager {
         //// Withdraw from B.Protocol fil vault
         pool.withdraw(msg.sender, filToWithdraw);
 
-        emit BondCancelled(msg.sender, _bondID, bond.filAmount, bond.filAmount, bond.filAmount);
+        emit BondCancelled(msg.sender, _bondID, bond.filAmount, _minFIL, filToWithdraw);
     }
 
     function chickenIn(uint256 _bondID) external {
