@@ -76,7 +76,7 @@ For the frontend, we created a [Next.js](https://github.com/vercel/next.js/) app
 smart contract and wallet interactions needed
 
 The repo for the frontend is in the `frontend` folder as a submodule but also [here](https://github.com/finiam/cosmic-chicken-frontend) 
-as it own project.
+as its own project.
 
 It is deployed using [Netfliy](https://netlify.com) and you can check it at https://cosmic-chicken.finiam.com
 
