@@ -72,9 +72,11 @@ ChickenBondManager: `0x60361121F74cE943D5cAFe0FBb98315A2eb2095b`
 
 ### Frontend
 
-For the frontend, we created a Next.js app. We used `ethers.js` and `wagmi` for the smart contract and wallet interactions needed
+For the frontend, we created a [Next.js](https://github.com/vercel/next.js/) app. We used `ethers.js` and `wagmi` for the 
+smart contract and wallet interactions needed
 
-The repo for the frontend is in the `frontend` folder as a submodule but also [here](https://github.com/finiam/cosmic-chicken-frontend) as it own project
+The repo for the frontend is in the `frontend` folder as a submodule but also [here](https://github.com/finiam/cosmic-chicken-frontend) 
+as it own project
 
 
 ---
