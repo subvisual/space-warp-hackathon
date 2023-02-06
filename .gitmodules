@@ -8,3 +8,6 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/finiam/cosmic-chicken-frontend/
