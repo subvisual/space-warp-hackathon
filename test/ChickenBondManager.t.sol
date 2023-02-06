@@ -131,7 +131,7 @@ contract ChickenBondManagerTest is Test {
 
     }
 
-    function testChickenOut(uint256 amount) public {
+    function testChickenOutNormalFlow(uint256 amount) public {
         vm.assume(amount >= 1 ether);
         vm.deal(alice, amount);
 
@@ -148,9 +148,66 @@ contract ChickenBondManagerTest is Test {
 
         assertEq(pedingfil, amount);
 
+        vm.expectEmit(true, false, false, true);
+        emit BondCancelled(alice, 1, amount, 0, amount);
         chickenBondManager.chickenOut(bondId,0);
 
         vm.stopPrank();
+    }
+
+    function testChickenOutMinFill(uint256 amount) public {
+        vm.assume(amount >= 1 ether );
+        vm.deal(alice, amount);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        vm.prank(address(alice));
+        uint256 bondId = chickenBondManager.createBond{value: amount}();
+
+
+        uint256 pedingfil = chickenBondManager.getPendingfil();
+
+        assertEq(pedingfil, amount);
+
+
+        uint256 halfAmount = amount/2 ;
+        uint256 minFil = amount - halfAmount;
+
+        vm.prank(address(chickenBondManager));
+        pool.withdraw(msg.sender, halfAmount );
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCancelled(alice, 1, amount, minFil, minFil );
+
+        vm.prank(address(alice));
+        chickenBondManager.chickenOut(bondId,minFil);
+    }
+
+    function test_RevertIf_ChickenOutNotEnoughFil(uint256 amount) public {
+        //vm.assume(amount >= 1 ether );
+        amount = bound(amount, 1 ether, 2**255);
+        vm.deal(alice, amount);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        vm.prank(address(alice));
+        uint256 bondId = chickenBondManager.createBond{value: amount}();
+
+
+        uint256 pedingfil = chickenBondManager.getPendingfil();
+
+        assertEq(pedingfil, amount);
+
+        vm.prank(address(chickenBondManager));
+        pool.withdraw(msg.sender, amount);
+
+        vm.expectRevert(NotEnoughFilInPool.selector);
+        vm.prank(address(alice));
+        chickenBondManager.chickenOut(bondId,amount);
     }
 
     function testRedeem(uint256 amount) public {
