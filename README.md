@@ -9,7 +9,7 @@ One of the current challenges in the Filecoin network is the lack of lending opt
 This is particularly relevant for the onboarding of new Storage Providers (SPs) to the network.
 
 In order for a Storage provider to be accepted into the network, it first needs to deposit a large amount of collateral.
-This amount is directly related to the amount of storage a new SP aims to provide to the network. The more the storage, the higher
+The collateral needed is directly related to how much storage a new SP aims to provide to the network. The more storage, the higher
 the collateral needed. 
 
 Also, the Filecoin network has a large base of long-term token holders that are willing to lend their FIL to reputable and growth-oriented SPs.
@@ -76,7 +76,9 @@ For the frontend, we created a [Next.js](https://github.com/vercel/next.js/) app
 smart contract and wallet interactions needed
 
 The repo for the frontend is in the `frontend` folder as a submodule but also [here](https://github.com/finiam/cosmic-chicken-frontend) 
-as it own project
+as it own project.
+
+It is deployed using [Netfliy](https://netlify.com) and you can check it at https://cosmic-chicken.finiam.com
 
 
 ---
