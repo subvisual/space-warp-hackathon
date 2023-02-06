@@ -31,8 +31,8 @@ Storage providers can borrow collateral from the Pool
 
 Lenders can provide liquidity to the Pool by minting a bond
 
-When an SP requests a loan, our protocol deposits the full amount needed by the SP on behalf of it. In order to request a loan,
-an SP first needs to deposits 50% of the full amount to the Cosmic Chicken Staking Pool.
+When an SP requests a loan, our protocol deposits the full amount needed by the SP on its behalf. In order to request a loan,
+an SP first needs to deposit 50% of the full amount to the Cosmic Chicken Staking Pool.
 Our protocol will lock the future income coming from the block rewards until the storage providers have repaid their loan
 
 ![image](https://user-images.githubusercontent.com/2940022/217022584-609abbdc-1bfc-4ca1-ba6a-1deb98bce63b.png)
