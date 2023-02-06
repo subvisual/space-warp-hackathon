@@ -82,7 +82,7 @@ It is deployed using [Netfliy](https://netlify.com) and you can check it at http
 
 ### NFT.Storage
 
-For the visual representation for the NFTs for the Chicken Bonds, we used [NFT.Storage](https://nft.storage) in order to host the assets
+For the visual representation of NFTs for Chicken Bonds, we used [NFT.Storage](https://nft.storage) in order to host the assets
 
 ---
 
