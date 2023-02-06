@@ -185,8 +185,9 @@ contract ChickenBondManagerTest is Test {
         chickenBondManager.chickenOut(bondId,minFil);
     }
 
-    function testChickenOutMinFill(uint256 amount, uint256 minFil) public {
-        vm.assume(amount >= 1 ether && minFil > 0 && minFil < amount );
+    function test_RevertIf_ChickenOutNotEnoughFil(uint256 amount) public {
+        //vm.assume(amount >= 1 ether );
+        amount = bound(amount, 1 ether, 2**255);
         vm.deal(alice, amount);
 
         vm.expectEmit(true, false, false, true);
@@ -201,20 +202,13 @@ contract ChickenBondManagerTest is Test {
 
         assertEq(pedingfil, amount);
 
-
-        uint256 amountToWithdraw = amount - minFil ;
-
         vm.prank(address(chickenBondManager));
-        pool.withdraw(msg.sender, amountToWithdraw );
+        pool.withdraw(msg.sender, amount);
 
-        //vm.expectEmit(true, false, false, true);
-        //emit BondCancelled(alice, 1, amount, minFil, minFil );
-        vm.expectRevert();
+        vm.expectRevert(NotEnoughFilInPool.selector);
         vm.prank(address(alice));
-        chickenBondManager.chickenOut(bondId,minFil);
+        chickenBondManager.chickenOut(bondId,amount);
     }
-
-
 
     function testRedeem(uint256 amount) public {
         vm.assume(amount >= 1 ether);
