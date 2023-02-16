@@ -82,10 +82,12 @@ contract TokenVaultTest is Test {
         assert(vaultBalance > withdrawAmount);
 
         share.approve(address(vault), withdrawAmount);
+        uint256 shareBalance = share.balanceOf(alice);
 
         vault.withdraw(1 ether);
 
         assertEq(address(vault).balance, vaultBalance - withdrawAmount);
+        assertEq(share.balanceOf(alice), shareBalance - withdrawAmount);
 
         vm.stopPrank();
     }
