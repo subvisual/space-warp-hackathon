@@ -118,7 +118,7 @@ contract Pool is Ownable {
     receive() external payable {}
 
     function harvestRewards() public {
-        updatePool(address(0), 0);
+        this.updatePool(address(0), 0);
 
         PoolStaker storage staker = poolStakers[msg.sender];
         uint256 rewards = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
@@ -134,7 +134,7 @@ contract Pool is Ownable {
         // payable(manager).transfer(rewardsToHarvest);
     }
 
-    function updatePool(address _storageProvider, uint256 rewards) public {
+    function updatePool(address _storageProvider, uint256 rewards) external {
         if (tokensStaked == 0 || rewards == 0) {
             return;
         }
