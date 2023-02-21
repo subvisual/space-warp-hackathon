@@ -6,12 +6,24 @@ import "./Broker.sol";
 
 contract Pool is Ownable {
     uint256 MAX_INT = 2 ** 256 - 1;
+    uint256 private constant REWARDS_PRECISION = 1e18;
 
     mapping(address => Broker) public loans;
 
     mapping(address => uint256) public lenderBalance;
     mapping(address => uint256) public storageProviderBalance;
     mapping(address => uint256) public lockedCapital;
+
+    struct PoolStaker {
+        uint256 amount;
+        uint256 rewards;
+        uint256 rewardDebt;
+    }
+
+    mapping(address => PoolStaker) public poolStakers;
+
+    uint256 public tokensStaked;
+    uint256 public accumulatedRewardsPerShare;
 
     uint256 public totalWorkingCapital;
     uint256 public totalLenderBalance;
@@ -34,17 +46,23 @@ contract Pool is Ownable {
         address storageProviderMiner,
         uint256 amount
     );
+    event HarvestRewards(address indexed user, uint256 amount);
 
     function depositLender(address lender) public payable {
-        _requireCallerIsChickenBondsManager();
-
         require(msg.value > 0, "Amount must be greater than zero");
+
+        harvestRewards();
+
+        PoolStaker storage staker = poolStakers[msg.sender];
+        staker.amount = staker.amount + msg.value;
+        staker.rewardDebt = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
 
         lenderBalance[lender] += msg.value;
         totalLenderBalance += msg.value;
         totalWorkingCapital += msg.value;
         totalCollateral += msg.value;
 
+        tokensStaked = tokensStaked + msg.value;
         emit LenderDeposit(lender, msg.value);
     }
 
@@ -86,7 +104,6 @@ contract Pool is Ownable {
     }
 
     function withdraw(address manager, uint256 amount) external {
-        _requireCallerIsChickenBondsManager();
         payable(manager).transfer(amount);
     }
 
@@ -95,15 +112,37 @@ contract Pool is Ownable {
     //
     function setAddresses(address _chickenBondManagerAddress) external onlyOwner {
         chickenBondManagerAddress = _chickenBondManagerAddress;
-        renounceOwnership();
     }
 
     fallback() external payable {}
     receive() external payable {}
 
-    function updatePool(address _storageProvider, uint256 amount) public {
-        lockedCapital[_storageProvider] += amount / 2;
-        totalWorkingCapital += amount / 2;
+    function harvestRewards() public {
+        updatePool(address(0), 0);
+
+        PoolStaker storage staker = poolStakers[msg.sender];
+        uint256 rewards = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
+        uint256 rewardsToHarvest = rewards - staker.rewardDebt;
+
+        staker.rewardDebt = rewards;
+
+        if (rewardsToHarvest == 0) {
+            return;
+        }
+
+        emit HarvestRewards(msg.sender, rewardsToHarvest);
+        // payable(manager).transfer(rewardsToHarvest);
+    }
+
+    function updatePool(address _storageProvider, uint256 rewards) public {
+        if (tokensStaked == 0 || rewards == 0) {
+            return;
+        }
+
+        lockedCapital[_storageProvider] += rewards / 2;
+        totalWorkingCapital += rewards / 2;
+
+        accumulatedRewardsPerShare = accumulatedRewardsPerShare + (rewards * REWARDS_PRECISION / tokensStaked);
     }
 
     function _requireCallerIsChickenBondsManager() internal view {

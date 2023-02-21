@@ -27,6 +27,7 @@ contract PoolTest is Test {
         address storageProviderMiner,
         uint256 amount
     );
+    event HarvestRewards(address indexed user, uint256 amount);
 
     fallback() external payable {}
     receive() external payable {}
@@ -48,8 +49,6 @@ contract PoolTest is Test {
 
         anotherLender = users[3];
         vm.label(anotherLender, "Lender Bob");
-
-        pool.setAddresses(lender);
 
         vm.deal(address(storageProvider), 100 ether);
         vm.deal(address(lender), 100 ether);
@@ -110,8 +109,6 @@ contract PoolTest is Test {
     }
 
     function testRequestLoanDeploysBroker(uint256 lenderDeposit) public {
-        // TODO how to use vm.assume instead of bound
-        // vm.assume(lenderDeposit != 0);
         lenderDeposit = bound(lenderDeposit, 1 ether, 10000 ether);
 
         uint256 storageDeposit = 4 * lenderDeposit;
@@ -187,6 +184,143 @@ contract PoolTest is Test {
         pool.withdraw(address(this), 1 ether);
         assertEq(lender.balance, 100 ether);
 
+        vm.stopPrank();
+    }
+
+    function testUpdatePoolNoTokensStaked() public {
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        pool.updatePool(address(0), 0);
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+    }
+
+    function testUpdatePoolNoRewards() public {
+        vm.startPrank(lender);
+        pool.depositLender{value: 1 ether}(lender);
+        vm.stopPrank();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 1 ether);
+        pool.updatePool(address(0), 0);
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+    }
+
+    function testUpdatePoolRewards() public {
+        vm.startPrank(lender);
+        pool.depositLender{value: 1 ether}(lender);
+        vm.stopPrank();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 1 ether);
+        pool.updatePool(address(0), 1 ether);
+        assertEq(pool.accumulatedRewardsPerShare(), 1 ether);
+    }
+
+    function testHarvestRewardsDoesNotUpdateShare() public {
+        vm.startPrank(lender);
+        pool.depositLender{value: 1 ether}(lender);
+        vm.stopPrank();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 1 ether);
+
+        pool.harvestRewards();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 1 ether);
+    }
+
+    function testHarvestRewardsEmitsEvent() public {
+        vm.startPrank(lender);
+        pool.depositLender{value: 1 ether}(lender);
+        vm.stopPrank();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 1 ether);
+
+        pool.updatePool(address(1), 2 ether);
+
+        vm.startPrank(lender);
+
+        vm.expectEmit(true, false, false, true);
+        emit HarvestRewards(address(lender), 2 ether);
+
+        pool.harvestRewards();
+
+        vm.stopPrank();
+    }
+
+    function testHarvestRewardsWithMultipleLendersAtSameTime(uint256 depositValue) public {
+        depositValue = bound(depositValue, 1 ether, 100 ether);
+
+        vm.startPrank(lender);
+        pool.depositLender{value: depositValue}(lender);
+        vm.stopPrank();
+
+        vm.startPrank(anotherLender);
+        pool.depositLender{value: depositValue}(anotherLender);
+        vm.stopPrank();
+
+        assertEq(pool.accumulatedRewardsPerShare(), 0);
+        assertEq(pool.tokensStaked(), 2 * depositValue);
+
+        pool.updatePool(address(1), 2 * depositValue);
+
+        vm.startPrank(lender);
+
+        vm.expectEmit(true, false, false, true);
+        emit HarvestRewards(address(lender), depositValue);
+
+        pool.harvestRewards();
+
+        vm.stopPrank();
+    }
+
+    function testHarvestRewardsWithMultipleLendersDifferentTime(uint256 depositValue) public {
+        depositValue = bound(depositValue, 1 ether, 100 ether);
+
+        vm.startPrank(lender);
+        pool.depositLender{value: depositValue}(lender);
+
+        vm.stopPrank();
+
+        pool.updatePool(address(1), depositValue);
+
+        vm.startPrank(lender);
+
+        vm.expectEmit(true, false, false, true);
+        emit HarvestRewards(address(lender), depositValue);
+
+        pool.harvestRewards();
+
+        vm.stopPrank();
+
+        vm.startPrank(anotherLender);
+
+        pool.depositLender{value: depositValue}(anotherLender);
+        assertEq(pool.tokensStaked(), 2 * depositValue);
+
+        (,, uint256 rewardDebt) = pool.poolStakers(anotherLender);
+        assertEq(rewardDebt, depositValue);
+
+        vm.stopPrank();
+
+        pool.updatePool(address(1), depositValue);
+
+        vm.startPrank(lender);
+
+        vm.expectEmit(true, false, false, true);
+        emit HarvestRewards(address(lender), depositValue / 2);
+
+        pool.harvestRewards();
+
+        vm.stopPrank();
+
+        vm.startPrank(anotherLender);
+
+        vm.expectEmit(true, false, false, true);
+        emit HarvestRewards(address(anotherLender), depositValue / 2);
+
+        pool.harvestRewards();
         vm.stopPrank();
     }
 }
