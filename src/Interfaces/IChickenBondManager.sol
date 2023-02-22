@@ -53,7 +53,7 @@ interface IChickenBondManager {
 
     // getters
     //function calcRedemptionFeePercentage(uint256 _fractionOfBFILToRedeem) external view returns (uint256);
-    //function getBondData(uint256 _bondID) external view returns (uint256 filAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status);
+    function getBondData(uint256 _bondID) external view returns (uint256 filAmount, uint64 claimedBFIL, uint64 startTime, uint64 endTime, uint8 status);
     //function getFILToAcquire(uint256 _bondID) external view returns (uint256);
     //function calcAccruedBFIL(uint256 _bondID) external view returns (uint256);
     //function calcBondBFILCap(uint256 _bondID) external view returns (uint256);

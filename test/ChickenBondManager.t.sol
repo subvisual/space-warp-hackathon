@@ -52,7 +52,7 @@ contract ChickenBondManagerTest is Test {
 
     function setUp() public {
         utils = new Utils();
-        bondNFT = new BondNFT("BOND", "BOND", "URI");
+        bondNFT = new BondNFT("BOND", "BOND", ["URI/","INURI/","OUTURI/"]);
         pool = new Pool();
         bfilToken = new BFIL("BFIL", "BFIL");
         chickenBondManager = new ChickenBondManager(address(bondNFT),address(pool), address(bfilToken ),1 ether);
@@ -86,6 +86,8 @@ contract ChickenBondManagerTest is Test {
         uint256 pedingfil = chickenBondManager.getPendingfil();
 
         assertEq(pedingfil, amount);
+
+        assertEq(bondNFT.tokenURI(1), "URI/1.json");
 
         vm.stopPrank();
     }
@@ -126,6 +128,7 @@ contract ChickenBondManagerTest is Test {
 
         assertEq(claimedBFIL, 0);
 
+        assertEq(bondNFT.tokenURI(1), "INURI/1.json");
 
         vm.stopPrank();
 
@@ -151,6 +154,9 @@ contract ChickenBondManagerTest is Test {
         vm.expectEmit(true, false, false, true);
         emit BondCancelled(alice, 1, amount, 0, amount);
         chickenBondManager.chickenOut(bondId,0);
+
+
+        assertEq(bondNFT.tokenURI(1), "OUTURI/1.json");
 
         vm.stopPrank();
     }

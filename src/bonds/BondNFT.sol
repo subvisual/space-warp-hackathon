@@ -5,6 +5,7 @@ import {ERC721} from "@solmate/tokens/ERC721.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {IChickenBondManager} from "../Interfaces/IChickenBondManager.sol";
 
 error TokenDoesNotExist();
 
@@ -12,14 +13,18 @@ contract BondNFT is ERC721, Ownable {
     using Strings for uint256;
 
     uint256 public totalSupply = 0;
-    string public baseURI;
+    string public bondURI;
+    string public chickenInURI;
+    string public chickenOutURI;
 
     address public chickenBondManagerAddress;
 
     error CallerNotChickenManager();
 
-    constructor(string memory _name, string memory _symbol, string memory _baseURI) ERC721(_name, _symbol) {
-        baseURI = _baseURI;
+    constructor(string memory _name, string memory _symbol, string[3] memory _URI) ERC721(_name, _symbol) {
+        bondURI = _URI[0];
+        chickenInURI = _URI[1];
+        chickenOutURI  = _URI[2];
     }
 
     //
@@ -64,7 +69,15 @@ contract BondNFT is ERC721, Ownable {
             revert TokenDoesNotExist();
         }
 
-        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(), ".json")) : "";
+        IChickenBondManager chickenBondManager = IChickenBondManager(chickenBondManagerAddress);
+        (,,,,uint8 status) = chickenBondManager.getBondData(tokenId);
+
+        string memory baseURI = status == 1 ? 
+            bondURI : 
+            status == 2 ? 
+                chickenOutURI : chickenInURI ;
+
+        return  string(abi.encodePacked(baseURI, tokenId.toString(), ".json"));
     }
 
     function _requireCallerIsChickenBondsManager() internal view {
