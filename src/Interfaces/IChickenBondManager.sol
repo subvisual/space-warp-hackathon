@@ -50,6 +50,7 @@ interface IChickenBondManager {
     function chickenOut(uint256 _bondID, uint256 _minFIL) external;
     function chickenIn(uint256 _bondID) external;
     function redeem(uint256 _bFILToRedeem, uint256 _minFILFromBAMMSPVault) external returns (uint256, uint256);
+    function storeYieldIntoPending(uint256 amount) external;
 
     // getters
     //function calcRedemptionFeePercentage(uint256 _fractionOfBFILToRedeem) external view returns (uint256);
