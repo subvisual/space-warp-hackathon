@@ -23,8 +23,6 @@ contract BrokerTest is Test {
         users = utils.createUsers(1);
 
         lender = users[0];
-
-        pool.setAddresses(lender);
     }
 
     function testGetStorageProvider() public {

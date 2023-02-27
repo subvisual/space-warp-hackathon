@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./Broker.sol";
+import "./Interfaces/IChickenBondManager.sol";
 
 contract Pool is Ownable {
     uint256 MAX_INT = 2 ** 256 - 1;
@@ -35,6 +36,8 @@ contract Pool is Ownable {
     error CallerNotChickenManager();
 
     constructor() {}
+    fallback() external payable {}
+    receive() external payable {}
 
     // Events
     event StorageProviderDeposit(address indexed from, uint256 value);
@@ -46,14 +49,13 @@ contract Pool is Ownable {
         address storageProviderMiner,
         uint256 amount
     );
-    event HarvestRewards(address indexed user, uint256 amount);
+    event WithdrawRewards(address indexed user, uint256 amount);
+    event WithdrawCollateral(address indexed user, uint256 amount);
 
     function depositLender(address lender) public payable {
         require(msg.value > 0, "Amount must be greater than zero");
 
-        harvestRewards();
-
-        PoolStaker storage staker = poolStakers[msg.sender];
+        PoolStaker storage staker = poolStakers[lender];
         staker.amount = staker.amount + msg.value;
         staker.rewardDebt = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
 
@@ -103,38 +105,60 @@ contract Pool is Ownable {
         return address(broker);
     }
 
-    function withdraw(address manager, uint256 amount) external {
-        payable(manager).transfer(amount);
-    }
-
-    //
-    // onlyOwner
-    //
-    function setAddresses(address _chickenBondManagerAddress) external onlyOwner {
-        chickenBondManagerAddress = _chickenBondManagerAddress;
-    }
-
-    fallback() external payable {}
-    receive() external payable {}
-
-    function harvestRewards() public {
-        this.updatePool(address(0), 0);
-
-        PoolStaker storage staker = poolStakers[msg.sender];
-        uint256 rewards = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
-        uint256 rewardsToHarvest = rewards - staker.rewardDebt;
-
-        staker.rewardDebt = rewards;
-
-        if (rewardsToHarvest == 0) {
+    function withdrawCollateral(address lender, uint256 amount) external {
+        if (amount == 0) {
             return;
         }
 
-        emit HarvestRewards(msg.sender, rewardsToHarvest);
-        // payable(manager).transfer(rewardsToHarvest);
+        PoolStaker storage staker = poolStakers[lender];
+
+        if (staker.amount == 0) {
+            return;
+        }
+
+        if (staker.amount - amount > 0) {
+            staker.amount = staker.amount - amount;
+        } else {
+            staker.amount = 0;
+        }
+
+        staker.rewardDebt = staker.amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
+
+        tokensStaked = tokensStaked - amount;
+
+        payable(lender).transfer(amount);
+
+        emit WithdrawCollateral(lender, amount);
     }
 
-    function updatePool(address _storageProvider, uint256 rewards) external {
+    function withdrawRewards(address lender, uint256 amount) external {
+        if (amount == 0 || amount > this.calculateRewards(lender, amount)) {
+            return;
+        }
+
+        PoolStaker storage staker = poolStakers[lender];
+
+        if (staker.amount == 0) {
+            return;
+        }
+
+        staker.rewardDebt += amount;
+
+        payable(lender).transfer(amount);
+
+        emit WithdrawRewards(lender, amount);
+    }
+
+    function calculateRewards(address lender, uint256 amount) external view returns (uint256) {
+        PoolStaker storage staker = poolStakers[lender];
+
+        uint256 rewards = amount * accumulatedRewardsPerShare / REWARDS_PRECISION;
+        uint256 rewardsToHarvest = rewards - staker.rewardDebt;
+
+        return rewardsToHarvest;
+    }
+
+    function updatePool(address _storageProvider, uint256 rewards) external payable {
         if (tokensStaked == 0 || rewards == 0) {
             return;
         }
@@ -143,9 +167,5 @@ contract Pool is Ownable {
         totalWorkingCapital += rewards / 2;
 
         accumulatedRewardsPerShare = accumulatedRewardsPerShare + (rewards * REWARDS_PRECISION / tokensStaked);
-    }
-
-    function _requireCallerIsChickenBondsManager() internal view {
-        if (msg.sender != chickenBondManagerAddress) revert CallerNotChickenManager();
     }
 }

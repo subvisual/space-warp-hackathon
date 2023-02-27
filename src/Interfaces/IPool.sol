@@ -16,5 +16,8 @@ interface IPool {
 
     function updatePool(address _storageProvider, uint256 amount) external;
 
-    function withdraw(address manager, uint256 amount) external;
+    function withdrawCollateral(address manager, uint256 amount) external;
+    function withdrawRewards(address manager, uint256 amount) external;
+
+    function calculateRewards(address lender, uint256 amount) external view returns (uint256);
 }

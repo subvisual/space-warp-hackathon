@@ -26,6 +26,9 @@ contract ChickenBondManager is IChickenBondManager {
     uint256 private pendingfil; // Total pending fil
     uint256 private permanentfil; // Total pending fil
 
+    fallback() external payable {}
+    receive() external payable {}
+
     constructor(address _bondNFT, address _pool, address _bfilToken, uint256 _MIN_BOND_AMOUNT) {
         bondNFT = IBondNFT(_bondNFT);
         pool = IPool(_pool);
@@ -68,10 +71,10 @@ contract ChickenBondManager is IChickenBondManager {
 
         pendingfil -= bond.filAmount;
         totalWeightedStartTimes -= bond.filAmount * bond.startTime;
+        uint256 rewards = pool.calculateRewards(msg.sender, bond.filAmount);
 
         uint256 filToWithdraw = _requireEnoughfilInPool(bond.filAmount, _minFIL);
-
-        pool.withdraw(msg.sender, filToWithdraw);
+        pool.withdrawCollateral(msg.sender, filToWithdraw);
 
         emit BondCancelled(msg.sender, _bondID, bond.filAmount, _minFIL, filToWithdraw);
     }
@@ -83,7 +86,10 @@ contract ChickenBondManager is IChickenBondManager {
 
         if (bond.status != BondStatus.active) revert BondNotActive();
 
-        uint256 accruedBFIL = 1;
+        uint256 rewards = pool.calculateRewards(msg.sender, bond.filAmount);
+        pool.withdrawRewards(msg.sender, rewards);
+
+        uint256 accruedBFIL = rewards;
         uint256 filSurplus = 1;
         uint256 chickenInFeeAmount = 0;
 

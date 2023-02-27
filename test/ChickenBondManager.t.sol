@@ -58,7 +58,6 @@ contract ChickenBondManagerTest is Test {
         chickenBondManager = new ChickenBondManager(address(bondNFT),address(pool), address(bfilToken ),1 ether);
 
         bondNFT.setAddresses(address(chickenBondManager));
-        pool.setAddresses(address(chickenBondManager));
         bfilToken.setAddresses(address(chickenBondManager));
 
         users = utils.createUsers(3);
@@ -86,6 +85,8 @@ contract ChickenBondManagerTest is Test {
         uint256 pendingFil = chickenBondManager.getPendingfil();
 
         assertEq(pendingFil, amount);
+
+        assertEq(pool.tokensStaked(), amount);
 
         vm.stopPrank();
     }
@@ -171,7 +172,7 @@ contract ChickenBondManagerTest is Test {
         uint256 minFil = amount - halfAmount;
 
         vm.prank(address(chickenBondManager));
-        pool.withdraw(msg.sender, halfAmount);
+        pool.withdrawCollateral(alice, halfAmount);
 
         vm.expectEmit(true, false, false, true);
         emit BondCancelled(alice, 1, amount, minFil, minFil);
@@ -181,7 +182,6 @@ contract ChickenBondManagerTest is Test {
     }
 
     function test_RevertIf_ChickenOutNotEnoughFil(uint256 amount) public {
-        //vm.assume(amount >= 1 ether );
         amount = bound(amount, 1 ether, 2 ** 255);
         vm.deal(alice, amount);
 
@@ -197,7 +197,7 @@ contract ChickenBondManagerTest is Test {
         assertEq(pendingFil, amount);
 
         vm.prank(address(chickenBondManager));
-        pool.withdraw(msg.sender, amount);
+        pool.withdrawCollateral(alice, amount);
 
         vm.expectRevert(NotEnoughFilInPool.selector);
         vm.prank(address(alice));
@@ -224,5 +224,86 @@ contract ChickenBondManagerTest is Test {
 
         chickenBondManager.redeem(1, 0);
         vm.stopPrank();
+    }
+
+    function testBondCreationAndReward(uint256 amount, uint256 reward) public {
+        amount = bound(amount, 1 ether, 100000 ether);
+        reward = bound(reward, 1 ether, amount);
+        vm.deal(alice, amount);
+
+        vm.startPrank(alice);
+
+        vm.expectEmit(true, false, false, true);
+        emit BondCreated(alice, 1, amount);
+        emit LenderDeposit(address(chickenBondManager), amount);
+
+        chickenBondManager.createBond{value: amount}();
+
+        uint256 pendingFil = chickenBondManager.getPendingfil();
+
+        assertEq(pendingFil, amount);
+
+        assertEq(pool.tokensStaked(), amount);
+
+        vm.stopPrank();
+
+        pool.updatePool(address(0), reward);
+
+        assertEq(pool.accumulatedRewardsPerShare(), reward * 1e18 / pool.tokensStaked());
+    }
+
+    function testChickenOutWithRewards(uint256 amount) public {
+        amount = bound(amount, 1 ether, 100000 ether);
+        vm.deal(alice, amount);
+
+        vm.startPrank(alice);
+
+        uint256 bondID = chickenBondManager.createBond{value: amount}();
+        uint256 tokensStaked = pool.tokensStaked();
+
+        assertEq(pool.tokensStaked(), amount);
+        assertEq(address(pool).balance, amount);
+
+        vm.stopPrank();
+
+        pool.updatePool{value: 2 * amount}(address(0), 2 * amount);
+
+        assertEq(pool.accumulatedRewardsPerShare(), 2 * amount * 1e18 / pool.tokensStaked());
+        assertEq(address(pool).balance, amount + 2 * amount);
+        assertEq(address(chickenBondManager).balance, 0);
+
+        vm.prank(alice);
+        chickenBondManager.chickenOut(bondID, amount);
+
+        assertEq(pool.tokensStaked(), tokensStaked - amount);
+        assertEq(address(pool).balance, 2 * amount);
+    }
+
+    function testChickenInWithRewards(uint256 amount) public {
+        amount = bound(amount, 1 ether, 100000 ether);
+        vm.deal(alice, amount);
+
+        vm.startPrank(alice);
+
+        uint256 bondID = chickenBondManager.createBond{value: amount}();
+
+        uint256 tokensStaked = pool.tokensStaked();
+
+        assertEq(pool.tokensStaked(), amount);
+        assertEq(address(pool).balance, amount);
+
+        vm.stopPrank();
+
+        pool.updatePool{value: 2 * amount}(address(0), 2 * amount);
+
+        assertEq(pool.accumulatedRewardsPerShare(), 2 * amount * 1e18 / pool.tokensStaked());
+        assertEq(address(pool).balance, amount + 2 * amount);
+        assertEq(address(chickenBondManager).balance, 0);
+        assertEq(bfilToken.balanceOf(alice), 0);
+
+        vm.prank(alice);
+        chickenBondManager.chickenIn(bondID);
+
+        assertEq(address(pool).balance, amount);
     }
 }
