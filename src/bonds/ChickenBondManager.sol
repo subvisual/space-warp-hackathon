@@ -113,10 +113,6 @@ contract ChickenBondManager is IChickenBondManager {
         return (0, 0);
     }
 
-    function storeYieldIntoPending(uint256 amount) external {
-        pendingfil += amount;
-    }
-
     function _requireEnoughfilInPool(uint256 _requestedFIL, uint256 _minFIL) internal view returns (uint256) {
         if (_requestedFIL < _minFIL) revert MinValueGreaterThanNominal();
 

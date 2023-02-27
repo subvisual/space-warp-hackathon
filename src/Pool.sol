@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./Broker.sol";
 import "./Interfaces/IChickenBondManager.sol";
-import {console} from "forge-std/console.sol";
 
 contract Pool is Ownable {
     uint256 MAX_INT = 2 ** 256 - 1;

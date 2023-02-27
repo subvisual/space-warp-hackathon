@@ -7,8 +7,6 @@ import "../src/bonds/BondNFT.sol";
 import "../src/bonds/BFIL.sol";
 import "./Utils.sol";
 
-import {console} from "@forge-std/console.sol";
-
 contract ChickenBondManagerTest is Test {
     Utils internal utils;
     BondNFT public bondNFT;
