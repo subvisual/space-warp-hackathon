@@ -107,19 +107,17 @@ contract ChickenBondManager is IChickenBondManager {
         return (0, 0);
     }
 
-
     function _requireEnoughfilInPool(uint256 _requestedFIL, uint256 _minFIL) internal view returns (uint256) {
         if (_requestedFIL < _minFIL) revert MinValueGreaterThanNominal();
 
         uint256 filInPool = address(pool).balance;
 
-        if(filInPool < _minFIL) revert NotEnoughFilInPool();
+        if (filInPool < _minFIL) revert NotEnoughFilInPool();
 
-        uint256 filToWithdraw = Math.min(_requestedFIL, filInPool );
+        uint256 filToWithdraw = Math.min(_requestedFIL, filInPool);
 
         return filToWithdraw;
     }
-
 
     // Bond getters
 
